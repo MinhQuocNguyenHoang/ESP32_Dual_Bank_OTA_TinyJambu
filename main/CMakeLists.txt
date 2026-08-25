@@ -3,8 +3,9 @@ idf_component_register(
          "glucose_monitor.cpp"
          "max30102.cpp"
          "ssd1306.cpp"
+         "ota_writer.cpp"
     INCLUDE_DIRS "."
-    REQUIRES nvs_flash esp_wifi esp_event mqtt driver esp_netif esp_driver_ledc esp_driver_i2c
+    REQUIRES nvs_flash esp_wifi esp_event mqtt driver esp_netif esp_driver_ledc esp_driver_i2c app_update
 )
 
 # Link TinyJAMBU pre-compiled static library for ESP32
