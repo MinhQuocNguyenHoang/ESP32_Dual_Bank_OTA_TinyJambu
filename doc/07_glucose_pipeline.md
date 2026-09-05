@@ -1,10 +1,10 @@
-# Pipeline đo glucose và truyền dữ liệu
+# Glucose Measurement Pipeline
 
-Module `glucose_monitor.c` quản lý pipeline đo glucose không xâm lấn. Pipeline này gồm phát hiện ngón tay, ổn định tín hiệu, lấy mẫu PPG, trích xuất đặc trưng, suy luận mô hình, mã hóa kết quả và gửi telemetry qua MQTT.
+`glucose_monitor.c` owns the non-invasive glucose measurement pipeline. The flow includes finger detection, signal stabilization, PPG sampling, feature extraction, model inference, result encryption, display output, MQTT telemetry, and gateway acknowledgment.
 
-## Phần cứng đo tín hiệu
+## Signal Acquisition Hardware
 
-Cảm biến MAX30102 được dùng ở chế độ SpO2, đọc hai kênh Red và IR. Firmware giao tiếp với cảm biến qua I2C0:
+The MAX30102 sensor is used in SpO2 mode and provides Red and IR optical samples. The firmware communicates with it over I2C0.
 
 ```text
 I2C port: I2C_NUM_0
@@ -13,13 +13,13 @@ SCL: GPIO33
 MAX30102 address: 0x57
 ```
 
-Trong `max30102_init()`, firmware cấu hình I2C master 400 kHz, reset sensor, cấu hình FIFO rollover, chọn SpO2 mode, đặt sample rate và pulse width, cấu hình dòng LED Red/IR, sau đó reset FIFO pointer.
+`max30102_init()` configures the ESP-IDF I2C master driver, resets the sensor, enables FIFO rollover, selects SpO2 mode, configures sample rate and pulse width, sets Red/IR LED current, and resets FIFO pointers.
 
-Driver `max30102_check()` đọc FIFO write pointer và read pointer để biết có bao nhiêu mẫu mới. Mỗi sample gồm 6 byte: 3 byte Red và 3 byte IR. Giá trị raw được mask về 18 bit bằng `0x03FFFF`.
+`max30102_check()` reads the sensor FIFO write and read pointers to determine how many samples are available. Each sample has 6 bytes: 3 bytes for Red and 3 bytes for IR. The raw values are masked to 18 bits with `0x03FFFF`.
 
-## Bộ đệm mẫu
+## Sample Buffers
 
-Trong `glucose_monitor.c`, cửa sổ lấy mẫu được cấu hình:
+The measurement window is configured as:
 
 ```text
 SAMPLE_WINDOW = 2000 ms
@@ -27,7 +27,7 @@ SAMPLE_RATE   = 100 Hz
 BUFFER_SIZE   = 200 samples
 ```
 
-Firmware lưu ba buffer:
+The firmware stores samples in:
 
 ```text
 g_ir_buffer[BUFFER_SIZE]
@@ -35,23 +35,23 @@ g_red_buffer[BUFFER_SIZE]
 g_sample_timestamps[BUFFER_SIZE]
 ```
 
-Mỗi lần đọc sample trong `STATE_SAMPLING`, firmware lưu Red, IR và timestamp hiện tại. Sau khi đủ 200 mẫu, state machine chuyển sang `STATE_PREDICT`.
+During `STATE_SAMPLING`, every acquired sample stores Red, IR, and timestamp data. After 200 samples are collected, the state machine transitions to prediction.
 
-## Phát hiện ngón tay
+## Finger Detection
 
-Firmware dùng IR raw để phát hiện ngón tay:
+Finger detection is based on the current IR value:
 
 ```text
 FINGER_THRESHOLD = 30000
 ```
 
-Nếu `current_ir > FINGER_THRESHOLD`, firmware xem như có ngón tay và chuyển từ `STATE_IDLE` sang `STATE_STABILIZING`. Nếu trong lúc ổn định hoặc lấy mẫu mà IR xuống dưới ngưỡng, firmware xem như người dùng đã rút tay và quay lại idle.
+If `current_ir > FINGER_THRESHOLD`, the firmware treats the finger as present and moves from `STATE_IDLE` to `STATE_STABILIZING`. If IR drops below the threshold during stabilization or sampling, the firmware returns to idle.
 
-Đây là cách phát hiện đơn giản, phù hợp demo. Trong bản cải tiến, ngưỡng có thể được hiệu chỉnh theo môi trường, hoặc dùng trung bình trượt để tránh nhiễu làm nhảy state.
+This fixed threshold is simple and works for demonstration. A production system would likely need adaptive thresholding, filtering, and calibration for different ambient light conditions and users.
 
-## State machine đo
+## Measurement State Machine
 
-Luồng đo đầy đủ:
+Full measurement flow:
 
 ```text
 IDLE
@@ -63,54 +63,54 @@ IDLE
   -> IDLE
 ```
 
-`STATE_IDLE` hiển thị màn hình chờ và reset index buffer. Khi phát hiện ngón tay, firmware ghi lại thời điểm bắt đầu ổn định.
+`STATE_IDLE` renders the idle screen and resets the sample index. When a finger is detected, the firmware records the stabilization start time.
 
-`STATE_STABILIZING` chạy trong 5 giây. OLED hiển thị progress bar. Mục đích là để tín hiệu quang học bớt nhiễu do người dùng vừa đặt tay.
+`STATE_STABILIZING` runs for 5 seconds and displays progress on the OLED. The goal is to let the optical signal settle before collecting the measurement window.
 
-`STATE_SAMPLING` lấy 200 mẫu với chu kỳ logic `1000 / SAMPLE_RATE`. OLED chỉ cập nhật mỗi 10 mẫu hoặc khi hoàn tất để tránh dùng I2C quá dày.
+`STATE_SAMPLING` records 200 Red/IR samples. OLED updates are throttled so the I2C bus is not saturated by display refreshes.
 
-`STATE_PREDICT` tính đặc trưng, chạy mô hình, mã hóa kết quả và hiển thị glucose lên OLED. Nếu glucose cao hơn 180 mg/dL hoặc thấp hơn 70 mg/dL, buzzer phát cảnh báo.
+`STATE_PREDICT` extracts features, runs the model, encrypts the result, displays glucose on the OLED, and triggers buzzer feedback. Values above 180 mg/dL and below 70 mg/dL trigger alert tones.
 
-`STATE_UPLOADING` gửi telemetry qua MQTT. Firmware chờ ACK từ gateway trong khoảng 1.5 giây. OLED hiển thị upload OK hoặc failed.
+`STATE_UPLOADING` sends encrypted telemetry through MQTT and waits up to 1.5 seconds for an ACK from the gateway.
 
-`STATE_WAIT_RELEASE` yêu cầu người dùng rút tay trước khi đo lượt mới.
+`STATE_WAIT_RELEASE` waits until the user removes the finger before returning to idle.
 
-## Feature extraction
+## Feature Extraction
 
-Hàm `extract_features()` tạo ba đặc trưng trực tiếp từ buffer Red/IR:
+`extract_features()` produces three direct features from the Red/IR buffers.
 
-| Feature | Cách tính | Ý nghĩa |
+| Feature | Calculation | Meaning |
 | --- | --- | --- |
-| `features[0]` | Mean IR chia Mean Red | Tỷ lệ hấp thụ tương đối giữa hai kênh quang học. |
-| `features[1]` | RMS của sai phân liên tiếp trên IR | Độ biến thiên tín hiệu PPG. |
-| `features[2]` | Độ dốc giữa điểm min và max hợp lệ | Đại diện cho tốc độ thay đổi waveform. |
+| `features[0]` | Mean IR divided by mean Red | Relative absorption ratio between optical channels. |
+| `features[1]` | RMS of consecutive IR differences | PPG signal variability. |
+| `features[2]` | Slope between valid min and max IR points | Approximate waveform rise rate. |
 
-Sau đó firmware tạo thêm hai feature phụ:
+Two additional derived features are then created:
 
 ```text
 full_features[3] = 60.0 / (features[1] + epsilon)
 full_features[4] = features[1] / (features[0] + epsilon)
 ```
 
-`epsilon = 0.000001` được dùng để tránh chia cho 0.
+`epsilon = 0.000001` prevents division by zero.
 
-Mô hình được gọi bằng:
+The model is called with:
 
 ```c
 predict_gradient_boosting(full_features)
 ```
 
-Hàm này nằm trong `gradient_boosting_model.h`, là model đã được export từ pipeline huấn luyện phía `software/`.
+The implementation is stored in `main/model/gradient_boosting_model.h`, generated from the Python training pipeline.
 
-## TinyJAMBU encryption
+## TinyJAMBU Encryption
 
-Sau khi có glucose prediction, firmware tạo plaintext dạng:
+After prediction, the firmware creates plaintext in this form:
 
 ```text
 GLUCOSE:<value>
 ```
 
-Sau đó gọi TinyJAMBU-128 AEAD:
+It then calls TinyJAMBU-128 AEAD:
 
 ```c
 tinyjambu_128_aead_encrypt(
@@ -124,17 +124,17 @@ tinyjambu_128_aead_encrypt(
     secret_key);
 ```
 
-Key hiện tại là 16 byte hardcoded trong firmware. Nonce hiện tại là 12 byte hardcoded. Đây phù hợp cho demo kỹ thuật, nhưng trong sản phẩm thật không nên dùng nonce cố định cho nhiều message với cùng key. Nên dùng nonce duy nhất cho mỗi telemetry message, ví dụ sinh từ counter lưu NVS hoặc timestamp kết hợp device ID.
+The current key is a 16-byte constant and the current nonce is a 12-byte constant in firmware. This is acceptable for a demonstration, but a real product should not reuse the same nonce with the same key. A better design would derive a unique nonce from a persistent counter, device ID, timestamp, or a combination of these values.
 
-## MQTT telemetry
+## MQTT Telemetry
 
-Firmware publish payload JSON lên topic:
+The firmware publishes JSON telemetry to:
 
 ```text
 medical/glucose_monitor/telemetry
 ```
 
-Payload hiện tại có dạng:
+Payload shape:
 
 ```json
 {
@@ -145,31 +145,31 @@ Payload hiện tại có dạng:
 }
 ```
 
-Sau khi publish, firmware chờ ACK từ một trong các topic:
+The firmware waits for ACK messages on:
 
 ```text
 medical/glucose_monitor/ack
 node/sensor_phong_khach/ack
 ```
 
-Nếu nhận message có topic chứa chuỗi `ack`, biến `s_web_ack_received` được set true. Hàm `send_telemetry_mqtt()` chờ tối đa 1.5 giây. Nếu có ACK, upload được xem là thành công.
+If an MQTT message arrives on a topic containing `ack`, `s_web_ack_received` is set to true. `send_telemetry_mqtt()` waits up to 1.5 seconds for this condition.
 
-## Web dashboard
+## Python Dashboard
 
-`app/app.py` chạy Flask và SocketIO. App subscribe MQTT telemetry, đọc `encrypted_hex`, giải mã TinyJAMBU bằng key và nonce tương ứng, suy ra glucose value, phân loại mức glucose, lưu SQLite và emit dữ liệu mới qua WebSocket cho frontend.
+`app/app.py` runs a Flask and SocketIO dashboard. It subscribes to telemetry topics, reads `encrypted_hex`, decrypts the TinyJAMBU payload, derives the glucose value, classifies the result, stores the measurement in SQLite, and emits a WebSocket event for the web UI.
 
-Các mức phân loại:
+Classification thresholds:
 
 ```text
 glucose > 180.0  -> Hyperglycemia
 glucose < 70.0   -> Hypoglycemia
-ngược lại        -> Normal
+otherwise        -> Normal
 ```
 
-Sau khi xử lý message, dashboard publish ACK ngược về ESP32 để hoàn tất vòng xác nhận telemetry.
+After processing each telemetry message, the dashboard publishes ACK messages back to the ESP32.
 
-## Giới hạn kỹ thuật hiện tại
+## Current Limitations
 
-Pipeline đo hiện tại phù hợp để demo xử lý tín hiệu và kiến trúc end-to-end, nhưng chưa phải thiết bị y tế hoàn chỉnh. Feature extraction còn đơn giản, ngưỡng phát hiện ngón tay cố định, model phụ thuộc vào dữ liệu huấn luyện mẫu, và TinyJAMBU đang dùng nonce cố định.
+The current measurement pipeline is suitable for demonstrating the end-to-end embedded architecture, but it is not a medical-grade implementation. Feature extraction is simple, finger detection uses a fixed threshold, the model depends on sample training data, and TinyJAMBU currently uses a fixed nonce.
 
-Các hướng cải tiến tự nhiên gồm hiệu chuẩn cảm biến theo từng người dùng, lọc nhiễu PPG trước khi lấy feature, lưu dữ liệu đo thô để đánh giá model, quản lý key/nonce an toàn hơn, và tách cấu hình WiFi/MQTT ra khỏi source code.
+Natural improvements include sensor calibration per user, PPG filtering before feature extraction, raw sample logging for model evaluation, safer key and nonce management, and moving WiFi/MQTT configuration out of source code.

@@ -1,12 +1,12 @@
-# Giao thức UART OTA
+# UART OTA Protocol
 
-Giao thức UART OTA của project là giao thức packet-based chạy giữa PC host và ESP32. PC đọc file firmware `.bin`, chia thành các packet nhỏ tối đa 256 byte payload, gửi lần lượt qua UART. ESP32 kiểm tra từng packet bằng CRC16, xử lý command, rồi trả ACK hoặc NACK.
+The project uses a custom packet-based UART protocol between a PC host and the ESP32 firmware. The host reads a firmware `.bin` file, splits it into chunks of at most 256 payload bytes, sends the chunks through UART, and waits for an ACK or NACK after each packet.
 
-Giao thức này không phải giao thức bootloader UART mặc định của Espressif. Nó chạy trong application firmware. Vì vậy ESP32 phải đang chạy firmware có OTA task, không phải đang ở chế độ BOOT download.
+This protocol is not the built-in Espressif ROM bootloader protocol. It runs inside the application firmware. The ESP32 must boot normally into an OTA-capable application; BOOT download mode is not used for UART OTA.
 
-## Cấu hình UART
+## UART Configuration
 
-Firmware hiện tại cấu hình OTA UART trong `main/main.c`:
+The current firmware configures the OTA transport in `main/main.c`.
 
 ```text
 UART port: UART_NUM_2
@@ -18,7 +18,7 @@ ESP32 RX: GPIO26
 ESP32 TX: GPIO27
 ```
 
-Kết nối với USB-UART rời:
+External USB-UART wiring:
 
 ```text
 USB-UART TX -> ESP32 GPIO26
@@ -26,58 +26,58 @@ USB-UART RX -> ESP32 GPIO27
 USB-UART GND -> ESP32 GND
 ```
 
-UART dùng mức logic 3.3 V. Nếu USB-UART có jumper 5 V/3.3 V thì chọn 3.3 V. Nếu board ESP32 đã được cấp nguồn bằng USB chính, thường không cần nối VCC từ USB-UART rời.
+The UART adapter must use 3.3 V logic. If the ESP32 board is already powered through its main USB connector, the external adapter usually needs only TX, RX, and GND.
 
-## Frame host gửi sang ESP32
+## Host-to-Device Frame
 
-Mỗi frame host-to-device có định dạng:
+Every host-to-device frame has this format:
 
 ```text
 [MAGIC0:1][MAGIC1:1][CMD:1][SEQ:2][LEN:2][PAYLOAD:0..256][CRC16:2]
 ```
 
-Các trường multi-byte được encode little-endian.
+Multi-byte fields are encoded little-endian.
 
-| Trường | Kích thước | Giá trị hoặc ý nghĩa |
+| Field | Size | Meaning |
 | --- | ---: | --- |
 | `MAGIC0` | 1 byte | `0xA5` |
 | `MAGIC1` | 1 byte | `0x5A` |
-| `CMD` | 1 byte | Command OTA |
-| `SEQ` | 2 byte | Sequence number của packet |
-| `LEN` | 2 byte | Độ dài payload |
-| `PAYLOAD` | 0 đến 256 byte | Dữ liệu tùy command |
-| `CRC16` | 2 byte | CRC16 của toàn bộ frame trừ chính trường CRC16 |
+| `CMD` | 1 byte | OTA command identifier |
+| `SEQ` | 2 bytes | Packet sequence number |
+| `LEN` | 2 bytes | Payload length |
+| `PAYLOAD` | 0 to 256 bytes | Command-specific payload |
+| `CRC16` | 2 bytes | CRC16 over the frame without the CRC field |
 
-CRC16 được tính trên:
+CRC16 is calculated over:
 
 ```text
 MAGIC0 || MAGIC1 || CMD || SEQ || LEN || PAYLOAD
 ```
 
-Không tính hai byte CRC cuối vào chính phép tính CRC.
+The final two CRC bytes are not included in the CRC input.
 
-## Command
+## Commands
 
-| Command | Giá trị | Payload | Ý nghĩa |
+| Command | Value | Payload | Meaning |
 | --- | ---: | --- | --- |
-| `START_OTA` | `0x01` | 8 byte | Bắt đầu OTA session. Payload gồm image size và CRC32 kỳ vọng. |
-| `DATA` | `0x02` | 1 đến 256 byte | Một đoạn firmware image. |
-| `END_OTA` | `0x03` | 0 byte | Kết thúc truyền file, yêu cầu ESP32 verify CRC32 và set boot partition. |
-| `ABORT` | `0x04` | 0 byte | Hủy OTA session đang chạy. |
+| `START_OTA` | `0x01` | 8 bytes | Starts a new OTA session. Payload contains image size and expected CRC32. |
+| `DATA` | `0x02` | 1 to 256 bytes | Carries one firmware image chunk. |
+| `END_OTA` | `0x03` | 0 bytes | Ends the transfer and asks ESP32 to verify the full image. |
+| `ABORT` | `0x04` | 0 bytes | Cancels the current OTA session. |
 
-Payload của `START_OTA`:
+`START_OTA` payload:
 
 ```text
 [IMAGE_SIZE:4][EXPECTED_CRC32:4]
 ```
 
-Cả hai trường đều little-endian. `IMAGE_SIZE` là tổng số byte của file `.bin`. `EXPECTED_CRC32` là CRC32 của toàn bộ file firmware do Python host tính trước khi gửi.
+Both fields are little-endian. `IMAGE_SIZE` is the total firmware binary size in bytes. `EXPECTED_CRC32` is calculated by the host before sending any data packets.
 
-## Sequence number
+## Sequence Numbers
 
-Packet đầu tiên dùng `SEQ = 0`. Sau mỗi packet hợp lệ, sequence tăng thêm 1.
+The first packet uses `SEQ = 0`. Each accepted packet increments the expected sequence by one.
 
-Luồng bình thường:
+Normal transfer:
 
 ```text
 START_OTA  seq=0
@@ -88,53 +88,53 @@ DATA       seq=3
 END_OTA    seq=N
 ```
 
-ESP32 lưu `expected_seq` trong `ota_controller`. Nếu nhận `DATA` hoặc `END_OTA` sai sequence, controller trả NACK với status `SEQ_ERROR`. Điều này tránh trường hợp host gửi thiếu packet, gửi lặp packet ngoài ý muốn hoặc dữ liệu đến sai thứ tự.
+The ESP32 stores `expected_seq` in the OTA controller. If a DATA or END packet arrives with an unexpected sequence number, the controller rejects it with `SEQ_ERROR`. This protects the transfer from missing packets, duplicated packets, and out-of-order data.
 
-## ACK/NACK response
+## ACK/NACK Response
 
-ESP32 trả response frame sau khi xử lý một packet.
+ESP32 sends a response frame after packet processing.
 
 ```text
 [MAGIC0:1][MAGIC1:1][RESP:1][SEQ:2][LEN:2][STATUS:1][CRC16:2]
 ```
 
-| Trường | Giá trị |
+| Field | Value |
 | --- | --- |
 | `RESP_ACK` | `0x79` |
 | `RESP_NACK` | `0x1F` |
 | `LEN` | `0x0001` |
-| `STATUS` | Mã trạng thái xử lý |
+| `STATUS` | Processing status |
 
-Status code:
+Status codes:
 
-| Status | Giá trị | Ý nghĩa |
+| Status | Value | Meaning |
 | --- | ---: | --- |
-| `OK` | `0x00` | Packet đã được xử lý thành công. |
-| `CRC_ERROR` | `0x01` | CRC16 packet sai hoặc CRC32 image sai. |
-| `SEQ_ERROR` | `0x02` | Sequence không đúng với sequence firmware đang chờ. |
-| `LENGTH_ERROR` | `0x03` | Payload length sai, vượt giới hạn hoặc không khớp image size. |
-| `STATE_ERROR` | `0x04` | Command không hợp lệ với trạng thái OTA hiện tại. |
-| `INTERNAL_ERROR` | `0x05` | Lỗi nội bộ như ghi flash thất bại. |
+| `OK` | `0x00` | Packet was accepted and processed. |
+| `CRC_ERROR` | `0x01` | Packet CRC16 or final image CRC32 failed. |
+| `SEQ_ERROR` | `0x02` | Sequence number does not match the expected value. |
+| `LENGTH_ERROR` | `0x03` | Payload length is invalid or would exceed the expected image size. |
+| `STATE_ERROR` | `0x04` | Command is not valid in the current OTA state. |
+| `INTERNAL_ERROR` | `0x05` | Internal failure, usually from flash or driver APIs. |
 
-Python script chỉ tiếp tục gửi packet tiếp theo khi nhận được ACK status OK cho đúng sequence. Nếu timeout hoặc nhận NACK, script retry packet hiện tại. Số lần retry mặc định là 3.
+The Python host sends the next packet only after receiving ACK with status OK for the expected sequence. Timeout or NACK triggers a retry. The default retry count is 3.
 
-## Luồng OTA hoàn chỉnh
+## Complete OTA Flow
 
 ```text
 PC host                         ESP32
    |                              |
    | START_OTA(seq=0)             |
    |----------------------------->|
-   |                              | kiểm CRC16 packet
-   |                              | đọc image_size và expected_crc32
-   |                              | esp_ota_begin partition inactive
+   |                              | validate CRC16
+   |                              | read image_size and expected_crc32
+   |                              | esp_ota_begin on inactive partition
    | ACK(seq=0)                   |
    |<-----------------------------|
    |                              |
    | DATA(seq=1, chunk 0)         |
    |----------------------------->|
-   |                              | kiểm CRC16
-   |                              | kiểm sequence
+   |                              | validate CRC16
+   |                              | check sequence
    |                              | esp_ota_write
    |                              | crc32_update
    | ACK(seq=1)                   |
@@ -147,9 +147,9 @@ PC host                         ESP32
    |                              |
    | END_OTA(seq=N)               |
    |----------------------------->|
-   |                              | kiểm tổng bytes
+   |                              | verify total byte count
    |                              | crc32_finish
-   |                              | so sánh expected_crc32
+   |                              | compare expected_crc32
    |                              | esp_ota_end
    |                              | esp_ota_set_boot_partition
    | ACK(seq=N)                   |
@@ -157,14 +157,14 @@ PC host                         ESP32
    |                              | reboot
 ```
 
-## Các lỗi demo thường gặp
+## Common Demo Errors
 
-Nếu Python timeout ngay `seq=0`, ESP32 chưa ACK cho packet START. Nguyên nhân thường là firmware đang chạy chưa có OTA task, gửi nhầm port, dây TX/RX sai, thiếu GND chung, USB-UART đang ở mức 5 V, hoặc OTA task chưa started vì firmware còn chờ WiFi/MQTT.
+Timeout at `seq=0` means the host sent START but did not receive ACK or NACK. Common causes are old firmware without the OTA task, wrong serial port, swapped TX/RX, missing common ground, 5 V UART logic, or sending before the OTA task has started.
 
-Nếu ESP32 có log `START OTA` nhưng Python vẫn timeout, kiểm tra dây ESP32 TX GPIO27 về USB-UART RX. Trường hợp này host gửi được sang ESP32, nhưng đường phản hồi từ ESP32 về host có vấn đề.
+If ESP32 logs `START OTA` but Python still times out, the host-to-ESP32 direction works and the problem is likely the ESP32 TX GPIO27 to USB-UART RX path.
 
-Nếu Python nhận NACK `LENGTH_ERROR`, kiểm tra chunk size, START payload và image size. Chunk size không được vượt 256 byte.
+`LENGTH_ERROR` usually means the payload length is invalid, the chunk size is larger than 256 bytes, START payload is not exactly 8 bytes, or END contains a payload.
 
-Nếu Python nhận NACK `SEQ_ERROR`, host và firmware đang lệch sequence. Nguyên nhân có thể do retry logic, reset ESP32 giữa lúc truyền, hoặc gửi lại cùng một session khi firmware vẫn còn active.
+`SEQ_ERROR` means host and firmware are out of sync. This can happen if the host restarts from packet zero while the ESP32 still has an active session.
 
-Nếu `END_OTA` bị NACK `CRC_ERROR`, packet có thể truyền đủ nhưng CRC32 toàn file không khớp. Cần kiểm tra file `.bin`, đường truyền và thuật toán CRC32 giữa Python và firmware.
+`CRC_ERROR` on END means the transfer reached the end but the calculated firmware CRC32 does not match the expected CRC32 sent in START.

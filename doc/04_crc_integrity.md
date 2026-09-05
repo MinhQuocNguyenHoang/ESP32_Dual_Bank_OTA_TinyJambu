@@ -1,63 +1,63 @@
-# CRC và kiểm tra toàn vẹn dữ liệu
+# CRC and Data Integrity
 
-Project dùng hai loại CRC ở hai tầng khác nhau. CRC16/CCITT-FALSE bảo vệ từng packet UART. CRC32 bảo vệ toàn bộ firmware image sau khi truyền xong. Hai phép kiểm tra này không thay thế nhau, vì chúng giải quyết hai loại lỗi khác nhau.
+The project uses two CRC layers. CRC16/CCITT-FALSE protects each UART packet. CRC32 protects the complete firmware image after the transfer finishes. These checks are complementary because they catch errors at different points in the update flow.
 
-CRC16 phát hiện lỗi sớm trên từng frame nhỏ. Nếu một byte trong packet bị sai, ESP32 có thể NACK ngay packet đó để host gửi lại. CRC32 phát hiện lỗi ở mức toàn file. Nếu mọi packet đều qua CRC16 nhưng dữ liệu cuối cùng vẫn không đúng với file gốc, CRC32 ở cuối session sẽ chặn firmware lỗi trước khi set boot partition.
+CRC16 catches corruption early at packet level. If one packet is damaged, ESP32 can reject only that packet and the host can retry it. CRC32 is the final image-level check. It verifies that the complete binary received by ESP32 matches the file that the host intended to send.
 
 ## CRC16/CCITT-FALSE
 
-Hàm triển khai trong project:
+Firmware API:
 
 ```c
 uint16_t crc_util_crc16_ccitt(const uint8_t *data, uint32_t len);
 ```
 
-Thông số thuật toán:
+Algorithm parameters:
 
-| Thuộc tính | Giá trị |
+| Property | Value |
 | --- | --- |
-| Tên thường dùng | CRC-16/CCITT-FALSE |
+| Common name | CRC-16/CCITT-FALSE |
 | Polynomial | `0x1021` |
 | Initial value | `0xFFFF` |
-| Input reflection | Không |
-| Output reflection | Không |
-| Final XOR | Không |
-| Độ rộng | 16 bit |
+| Input reflection | Disabled |
+| Output reflection | Disabled |
+| Final XOR | None |
+| Width | 16 bits |
 
-Với UART packet, CRC16 được tính trên header và payload:
+For UART packets, CRC16 is calculated over the header and payload:
 
 ```text
 [MAGIC0][MAGIC1][CMD][SEQ][LEN][PAYLOAD]
 ```
 
-Hai byte CRC16 cuối frame không được đưa vào dữ liệu đầu vào của phép tính. Sau khi tính xong, CRC16 được encode little-endian trong frame.
+The two CRC bytes at the end of the frame are not included in the CRC input. The final CRC16 value is stored little-endian in the frame.
 
-Ví dụ frame START có payload 8 byte. Dữ liệu đưa vào CRC16 là:
+Example START frame CRC input:
 
 ```text
-A5 5A 01 00 00 08 00 <image_size 4 byte> <crc32 4 byte>
+A5 5A 01 00 00 08 00 <image_size 4 bytes> <crc32 4 bytes>
 ```
 
-Trong đó:
+Field meaning:
 
 ```text
 A5 5A       magic
-01          command START_OTA
+01          START_OTA command
 00 00       sequence = 0
 08 00       payload length = 8
 ```
 
-Firmware nhận frame, tính lại CRC16 trên cùng vùng dữ liệu. Nếu giá trị nhận được khác giá trị tự tính, frame bị loại và controller trả NACK `CRC_ERROR`.
+The firmware recalculates CRC16 on the same byte range. If the received CRC16 does not match the calculated CRC16, the frame is rejected and the controller returns NACK with `CRC_ERROR`.
 
-## Từng bước tính CRC16 trong code
+## CRC16 Calculation Steps
 
-Thuật toán xử lý từng byte. Với mỗi byte, byte đó được đưa vào 8 bit cao của thanh ghi CRC:
+The implementation processes one byte at a time. Each byte is XORed into the high byte of the 16-bit CRC register:
 
 ```c
 crc = crc ^ (data[i] << 8);
 ```
 
-Sau đó lặp 8 lần, tương ứng 8 bit:
+Then the algorithm loops 8 times, one step for each bit:
 
 ```c
 if ((crc & 0x8000) != 0)
@@ -70,9 +70,9 @@ else
 }
 ```
 
-Bit `0x8000` là bit cao nhất của thanh ghi 16 bit. Nếu bit cao nhất đang là 1, sau khi shift trái phải XOR với polynomial `0x1021`. Nếu bit cao nhất là 0, chỉ shift trái. Kết quả được ép về `uint16_t`, nên chỉ giữ lại 16 bit thấp.
+`0x8000` checks the top bit of the 16-bit CRC register. If the top bit is 1, the shifted value is XORed with polynomial `0x1021`. If the top bit is 0, the value is only shifted left. The result is stored in `uint16_t`, so only the lower 16 bits are kept.
 
-Điểm quan trọng là XOR không phải phép cộng số học. XOR làm việc theo từng bit:
+XOR is not arithmetic addition. It is a bitwise operation:
 
 ```text
 0 xor 0 = 0
@@ -81,22 +81,22 @@ Bit `0x8000` là bit cao nhất của thanh ghi 16 bit. Nếu bit cao nhất đa
 1 xor 1 = 0
 ```
 
-Do đó:
+Example:
 
 ```text
 0xFFFF xor 0xAA00 = 0x55FF
 ```
 
-Vì byte cao:
+For the high byte:
 
 ```text
 0xFF xor 0xAA = 0x55
 1111 1111 xor 1010 1010 = 0101 0101
 ```
 
-## CRC32 cho toàn bộ firmware image
+## CRC32 for the Firmware Image
 
-Hàm triển khai trong project:
+Firmware API:
 
 ```c
 uint32_t crc_util_crc32_init(void);
@@ -104,25 +104,25 @@ uint32_t crc_util_crc32_update(uint32_t crc, const uint8_t *data, uint32_t len);
 uint32_t crc_util_crc32_finish(uint32_t crc);
 ```
 
-Thông số thuật toán:
+Algorithm parameters:
 
-| Thuộc tính | Giá trị |
+| Property | Value |
 | --- | --- |
-| Polynomial reflected | `0xEDB88320` |
+| Reflected polynomial | `0xEDB88320` |
 | Initial value | `0xFFFFFFFF` |
 | Final XOR | `0xFFFFFFFF` |
-| Kiểu xử lý | Streaming, update theo chunk |
-| Độ rộng | 32 bit |
+| Processing model | Streaming chunk updates |
+| Width | 32 bits |
 
-Host Python dùng:
+The Python host uses:
 
 ```python
 zlib.crc32(image) & 0xFFFFFFFF
 ```
 
-Firmware dùng CRC32 streaming. Khi nhận `START_OTA`, controller gọi `crc_util_crc32_init()`. Sau mỗi packet `DATA`, controller gọi `crc_util_crc32_update()` với payload vừa ghi vào flash. Khi nhận `END_OTA`, controller gọi `crc_util_crc32_finish()` để lấy CRC32 cuối cùng.
+The firmware uses a streaming CRC32 calculation. On START_OTA, the controller initializes the CRC32 state. On each DATA packet, the payload is added to the CRC32 state after it is written to flash. On END_OTA, the controller finalizes the CRC32 value and compares it against the expected CRC32 sent by the host.
 
-Luồng trong firmware:
+Firmware flow:
 
 ```text
 START_OTA:
@@ -136,12 +136,12 @@ END_OTA:
   compare calculated_crc32 with expected_crc32 from START_OTA
 ```
 
-Nếu CRC32 không khớp, firmware gọi `ota_writer_abort()` và không set boot partition mới. Đây là chốt bảo vệ cuối cùng để tránh boot vào firmware bị lỗi trong quá trình truyền.
+If CRC32 does not match, the firmware aborts the OTA session and does not select the new boot partition. The previous firmware remains the active boot target.
 
-## Vì sao cần cả CRC16 và CRC32
+## Why Both CRC16 and CRC32 Are Used
 
-CRC16 giúp phát hiện lỗi ngay tại packet đang truyền. Với packet tối đa 256 byte, việc tính CRC16 nhanh, frame ngắn và phản hồi ACK/NACK đơn giản. Nếu lỗi xảy ra ở packet thứ 10, host chỉ cần gửi lại packet thứ 10, không cần gửi lại toàn bộ file.
+CRC16 is cheap and effective for short UART packets. It allows a failed packet to be rejected immediately and retried without restarting the full firmware transfer.
 
-CRC32 kiểm tra toàn bộ firmware image như một đối tượng hoàn chỉnh. Nếu có lỗi logic trong sequence, lỗi ghi flash, lỗi host gửi nhầm file, hoặc lỗi nào đó không bị bắt ở từng packet, CRC32 cuối session vẫn có cơ hội phát hiện.
+CRC32 checks the firmware image as a complete object. It catches full-image mismatch, incorrect files, write-path issues, and any transfer inconsistency that was not caught at packet level.
 
-Trong hệ thống OTA, cách kết hợp này thực tế hơn chỉ dùng một CRC duy nhất. CRC16 giảm chi phí retry trong lúc truyền, CRC32 quyết định image có đủ tin cậy để boot hay không.
+Using both checks gives the OTA system early packet-level recovery and final image-level confidence before boot partition switching.

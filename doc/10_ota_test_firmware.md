@@ -1,39 +1,41 @@
-# Firmware test OTA và script demo Python
+# OTA Test Firmware and Demo Scripts
 
-Project có thêm một build mode tối giản để kiểm tra OTA độc lập với pipeline đo glucose. Mục tiêu của mode này là tạo một firmware nhỏ, boot nhanh, không phụ thuộc WiFi, MQTT, sensor hoặc OLED. Sau khi OTA thành công, firmware test in version và partition đang chạy để xác nhận ESP32 đã boot vào image mới.
+The project includes a minimal build mode for testing OTA independently from the glucose measurement pipeline. This mode builds a smaller firmware image that boots quickly and does not initialize WiFi, MQTT, sensors, OLED, or TinyJAMBU.
 
-## Vì sao cần firmware test riêng
+After a successful OTA update, the test firmware prints its version, running partition, and heartbeat logs. This makes it easy to confirm that ESP32 has rebooted into the new image.
 
-Firmware đầy đủ của project khởi tạo MAX30102, OLED, WiFi, MQTT, TinyJAMBU và state machine đo glucose. Khi demo OTA, các phần này có thể làm việc kiểm thử chậm hơn hoặc gây nhiễu khi debug, ví dụ WiFi chờ timeout hoặc sensor chưa nối.
+## Purpose
 
-Firmware test OTA chỉ giữ lại các phần cần cho OTA:
+The full firmware initializes MAX30102, SSD1306, WiFi, MQTT, TinyJAMBU, and the glucose measurement state machine. These subsystems are useful for the final project, but they can slow down OTA testing or introduce unrelated failures during a demo.
+
+The OTA test firmware keeps only the pieces needed to validate the OTA mechanism:
 
 ```text
-NVS init
+NVS initialization
 rollback health check
 OTA controller task
 version log
 heartbeat log
 ```
 
-Nhờ vậy có thể kiểm tra nhanh ba điều quan trọng:
+This verifies three important behaviors:
 
 ```text
-file mới được nhận qua UART
-ESP32 đã ghi sang OTA slot còn lại
-bootloader đã boot vào image mới sau reset
+the binary was received through UART
+ESP32 wrote the image to the inactive OTA slot
+the bootloader started the new image after reset
 ```
 
-## Source code test
+## Source Files
 
-Source test nằm tại:
+The test application source files are:
 
 ```text
 main/app/ota_test_app.c
 main/app/ota_test_app.h
 ```
 
-Khi firmware test chạy, log có dạng:
+Expected logs:
 
 ```text
 Minimal OTA test firmware started
@@ -42,11 +44,11 @@ Running partition: ota_1 at 0x00200000
 OTA test heartbeat=1, free_heap=... bytes, version=ota-demo-v2
 ```
 
-Version được truyền từ CMake bằng macro `APP_OTA_TEST_VERSION`. Nhờ vậy mỗi lần build test có thể đặt version khác nhau mà không cần sửa source code.
+The version string is passed from CMake through `APP_OTA_TEST_VERSION`. This allows each test build to carry a different version label without editing source code.
 
-## Build firmware test thủ công
+## Manual Test Firmware Build
 
-Có thể build firmware test bằng ESP-IDF:
+Build the minimal OTA test firmware manually:
 
 ```bash
 idf.py -B build_ota_test \
@@ -55,95 +57,123 @@ idf.py -B build_ota_test \
   build
 ```
 
-Binary sinh ra tại:
+The generated binary is:
 
 ```text
 build_ota_test/glucose_monitor_espidf.bin
 ```
 
-Tên project vẫn là `glucose_monitor_espidf`, chỉ khác nội dung firmware vì CMake đang bật test mode.
+The ESP-IDF project name remains `glucose_monitor_espidf`; only the selected application source changes because `APP_OTA_TEST_MODE` is enabled.
 
-## Gửi firmware test bằng script wrapper
+## Short Shell Scripts
 
-Script wrapper nằm tại:
+The recommended way to run demos is to use the shell scripts under `tools/`.
 
-```text
-tools/ota_demo_flash.py
-```
-
-Lệnh build firmware test rồi gửi qua UART OTA:
+Build and send the minimal OTA test firmware:
 
 ```bash
 ./tools/ota_test.sh /dev/ttyUSB1 ota-demo-v2
 ```
 
-Script sẽ thực hiện hai bước:
+This command builds `build_ota_test/glucose_monitor_espidf.bin` and sends it through UART OTA.
 
-```text
-idf.py -B build_ota_test -DAPP_OTA_TEST_MODE=ON -DAPP_OTA_TEST_VERSION=... build
-python3 tools/ota_uart_send.py --port ... --file build_ota_test/glucose_monitor_espidf.bin
+Build only, without sending:
+
+```bash
+./tools/build_ota_test.sh ota-demo-v2
 ```
 
-Muốn đổi thư mục build:
+Build with a custom build directory:
 
 ```bash
 ./tools/build_ota_test.sh ota-demo-v3 build_ota_v3
-
-python3 tools/ota_demo_flash.py \
-  --port /dev/ttyUSB1 \
-  --file build_ota_v3/glucose_monitor_espidf.bin
 ```
 
-## Gửi firmware có sẵn
-
-Nếu đã build firmware trước đó, có thể gửi file `.bin` bất kỳ:
+Send a specific binary:
 
 ```bash
-./tools/ota_full.sh /dev/ttyUSB1 build/glucose_monitor_espidf.bin
+./tools/ota_full.sh /dev/ttyUSB1 build_ota_v3/glucose_monitor_espidf.bin
 ```
 
-Nếu không truyền `--file`, script mặc định dùng:
+Send the normal firmware from the default build directory:
 
-```text
-build/glucose_monitor_espidf.bin
+```bash
+./tools/ota_full.sh /dev/ttyUSB1
 ```
 
-## Quy trình demo đề xuất
-
-Trước tiên flash firmware đầy đủ có OTA bằng cổng nạp bình thường:
+Initial flash through the normal programming port:
 
 ```bash
 ./tools/flash_initial.sh /dev/ttyUSB0
 ```
 
-Đợi log:
+## Python Wrapper
+
+The shell scripts call `tools/ota_demo_flash.py` internally. It can also be used directly.
+
+Build and send OTA test firmware:
+
+```bash
+python3 tools/ota_demo_flash.py \
+  --port /dev/ttyUSB1 \
+  --test-app \
+  --version ota-demo-v2
+```
+
+Send an existing binary:
+
+```bash
+python3 tools/ota_demo_flash.py \
+  --port /dev/ttyUSB1 \
+  --file build/glucose_monitor_espidf.bin
+```
+
+The lower-level sender remains available as:
+
+```bash
+python3 tools/ota_uart_send.py \
+  --port /dev/ttyUSB1 \
+  --file build/glucose_monitor_espidf.bin \
+  --baud 115200
+```
+
+## Suggested Demo Flow
+
+First, flash an OTA-capable firmware through the normal programming port:
+
+```bash
+./tools/flash_initial.sh /dev/ttyUSB0
+```
+
+Wait for this log:
 
 ```text
 OTA task started on UART2 RX=26 TX=27
 ```
 
-Sau đó mở terminal khác và gửi firmware test:
+Then send the minimal test firmware from another terminal:
 
 ```bash
 ./tools/ota_test.sh /dev/ttyUSB1 ota-demo-v2
 ```
 
-Sau khi OTA hoàn tất, ESP32 reboot. Trên monitor cần thấy version test mới. Nếu lần sau muốn quay lại firmware đầy đủ, build bình thường rồi gửi:
+After the OTA transfer completes, ESP32 reboots. The monitor should show the new test firmware version. To return to the full glucose monitor firmware:
 
 ```bash
 idf.py build
-
 ./tools/ota_full.sh /dev/ttyUSB1
 ```
 
-## Lưu ý về môi trường
+## Environment Notes
 
-Các shell script `ota_test.sh`, `build_ota_test.sh` và `flash_initial.sh` sẽ tự source ESP-IDF nếu tìm thấy `$IDF_PATH/export.sh` hoặc `$HOME/Tools/esp/esp-idf/export.sh`. Nếu gọi trực tiếp `ota_demo_flash.py` và script cần build firmware, terminal phải source ESP-IDF trước:
+`ota_test.sh`, `build_ota_test.sh`, and `flash_initial.sh` try to source ESP-IDF automatically from `$IDF_PATH/export.sh` or `$HOME/Tools/esp/esp-idf/export.sh`.
+
+If `ota_demo_flash.py` is called directly and it needs to build firmware, the terminal must already have ESP-IDF in the environment:
 
 ```bash
 source /home/minhquocnguyenhoang/Tools/esp/esp-idf/export.sh
 ```
 
-Nếu chỉ dùng `--file` để gửi binary có sẵn, script không cần gọi `idf.py`, nhưng vẫn cần `pyserial` vì quá trình gửi OTA dùng UART.
+If an existing `.bin` file is supplied, `idf.py` is not needed. `pyserial` is still required because the OTA transfer uses UART.
 
-Firmware test vẫn giữ OTA task, NVS pending flag và rollback health check. Vì vậy nó vẫn kiểm tra được OTA theo đúng cơ chế chính của project, chỉ bỏ phần ứng dụng đo glucose để việc demo gọn hơn.
+The test firmware still uses the same OTA task, NVS pending flag, and rollback health check as the main firmware. It is only a smaller application layer for repeatable OTA validation.

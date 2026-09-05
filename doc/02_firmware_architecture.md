@@ -1,87 +1,86 @@
-# Kiến trúc firmware ESP32
+# Firmware Architecture
 
-Firmware được viết theo ESP-IDF và tổ chức thành các module C riêng. `app_main()` trong `main/main.c` đóng vai trò điều phối khởi động. Sau khi boot, hệ thống khởi tạo NVS, kiểm tra trạng thái rollback, khởi tạo chức năng đo glucose, xác nhận image OTA nếu image mới chạy ổn, rồi tạo task OTA chạy song song với vòng lặp đo glucose.
+The firmware is organized as one ESP-IDF component under `main/`, with internal folders for application code, hardware drivers, OTA modules, cryptography headers, and the embedded model. `app_main()` in `main/main.c` is the system entry point.
 
-## Luồng khởi động
+At boot, the firmware initializes NVS, checks OTA rollback state, initializes the selected application mode, confirms a pending OTA image if the application reaches a valid point, creates the OTA task, and then enters the main runtime loop.
 
-Luồng khởi động hiện tại có thứ tự như sau.
+## Boot Flow
 
 ```text
 app_main
   -> app_nvs_init
   -> ota_boot_health_check
-  -> glucose_monitor_init
+  -> glucose_monitor_init or ota_test_app_init
   -> ota_confirm_running_app_if_pending
   -> xTaskCreate(ota_task)
-  -> while true: glucose_monitor_process
+  -> while true:
+       glucose_monitor_process or ota_test_app_process
 ```
 
-`app_nvs_init()` gọi `nvs_flash_init()`. Nếu NVS báo hết trang hoặc khác version, firmware erase NVS rồi init lại. Đây là cách xử lý quen thuộc trong ESP-IDF để tránh lỗi khi layout NVS thay đổi trong quá trình phát triển.
+`app_nvs_init()` initializes the ESP-IDF NVS partition. If NVS reports no free pages or a version mismatch, the firmware erases NVS and initializes it again. This is a common recovery path during development when NVS layout changes.
 
-`ota_boot_health_check()` kiểm tra xem firmware đang chạy có đang ở trạng thái cần xác nhận hay không. Trạng thái này được đọc từ hai nguồn: NVS của project và OTA state của ESP-IDF. Nếu có pending image, boot counter trong NVS được tăng lên. Nếu số lần boot vượt quá giới hạn, firmware gọi rollback API để quay về image cũ.
+`ota_boot_health_check()` checks both the project NVS state and ESP-IDF OTA image state. If the running image is pending validation, the boot counter is incremented. If the counter exceeds the configured limit, the firmware marks the current image invalid and reboots into rollback.
 
-`glucose_monitor_init()` khởi tạo phần đo glucose, bao gồm network stack, event loop, buzzer, MAX30102, SSD1306, WiFi và MQTT. Hàm này có thể chờ WiFi tối đa khoảng 10 giây và MQTT khoảng 6 giây.
+The normal application path calls `glucose_monitor_init()`. This initializes the network stack, event loop, buzzer, MAX30102, SSD1306, WiFi, and MQTT. This function may wait up to roughly 10 seconds for WiFi and 6 seconds for MQTT.
 
-`ota_confirm_running_app_if_pending()` được gọi sau khi khởi tạo glucose monitor. Ý nghĩa của đoạn này là chỉ xác nhận image OTA mới nếu firmware đã boot được và đi qua được phần khởi tạo chính. Khi xác nhận thành công, firmware gọi `esp_ota_mark_app_valid_cancel_rollback()` và xóa pending flag trong NVS.
+The OTA test build path calls `ota_test_app_init()` instead. This mode avoids sensor, display, WiFi, MQTT, and TinyJAMBU initialization. It boots quickly and prints version information for OTA validation.
 
-Cuối cùng, `ota_task` được tạo. Task này init UART2 và chạy vòng lặp xử lý từng packet OTA.
+After the selected application init completes, `ota_confirm_running_app_if_pending()` marks the running image as valid if it was pending validation. In the current design, reaching this point is treated as the basic application self-test boundary.
 
-## Task chính và task OTA
+## Runtime Tasks
 
-Project có một luồng xử lý chính nằm trong `app_main()` và một task phụ cho OTA.
+The firmware has one main application loop and one dedicated OTA task.
 
 ```text
-Main app loop
-  -> glucose_monitor_process()
+Main loop
+  -> application process function
   -> vTaskDelay(10 ms)
 
 OTA task
-  -> ota_controller_init()
+  -> ota_controller_init
   -> loop:
-       ota_controller_process_once()
+       ota_controller_process_once
 ```
 
-`glucose_monitor_process()` chạy state machine đo glucose. Đây là phần tương tác với sensor, OLED, buzzer, TinyJAMBU và MQTT.
+`glucose_monitor_process()` runs the measurement state machine in the full application. In test mode, `ota_test_app_process()` prints a periodic heartbeat instead.
 
-`ota_controller_process_once()` chờ một packet UART trong thời gian timeout cấu hình. Nếu timeout, task xem đó là trạng thái idle bình thường và tiếp tục vòng lặp. Nếu nhận được packet hợp lệ, controller xử lý command rồi gửi ACK hoặc NACK về host.
+`ota_controller_process_once()` waits for one UART packet using the configured timeout. Timeout is treated as normal idle behavior. A valid packet is dispatched to the OTA state machine and produces either ACK or NACK.
 
-Thiết kế này giúp OTA không block vòng đo glucose trong thời gian chờ UART. Ngược lại, quá trình gửi OTA vẫn có thể bị ảnh hưởng nếu hệ thống đang thực hiện các đoạn delay dài trong các task khác, nên khi demo nên để thiết bị ở trạng thái ổn định và chờ OTA task đã started.
+## Glucose Measurement State Machine
 
-## State machine đo glucose
+The normal glucose application uses `display_state_t` in `glucose_monitor.c`.
 
-Module `glucose_monitor.c` dùng enum `display_state_t` để quản lý quá trình đo.
-
-| State | Vai trò |
+| State | Responsibility |
 | --- | --- |
-| `STATE_IDLE` | Chờ người dùng đặt ngón tay. OLED hiển thị trạng thái sẵn sàng. |
-| `STATE_STABILIZING` | Đợi tín hiệu IR ổn định trong 5 giây. Nếu rút tay thì quay về idle. |
-| `STATE_SAMPLING` | Lấy mẫu Red/IR vào buffer với sample rate 100 Hz trong cửa sổ 2 giây. |
-| `STATE_PREDICT` | Tính feature, chạy mô hình Gradient Boosting, mã hóa kết quả và hiển thị glucose. |
-| `STATE_UPLOADING` | Gửi telemetry đã mã hóa qua MQTT và chờ ACK từ web gateway. |
-| `STATE_WAIT_RELEASE` | Chờ người dùng rút tay trước khi cho phép đo lần tiếp theo. |
+| `STATE_IDLE` | Waits for finger placement and renders the idle screen. |
+| `STATE_STABILIZING` | Waits for a stable IR signal for 5 seconds. |
+| `STATE_SAMPLING` | Records Red/IR PPG samples at 100 Hz for a 2 second window. |
+| `STATE_PREDICT` | Extracts features, runs the Gradient Boosting model, encrypts the result, and renders glucose output. |
+| `STATE_UPLOADING` | Publishes encrypted telemetry through MQTT and waits for a gateway ACK. |
+| `STATE_WAIT_RELEASE` | Waits until the user removes the finger before allowing another measurement. |
 
-Các tham số chính:
+Main parameters:
 
-| Tham số | Giá trị hiện tại | Ý nghĩa |
-| --- | --- | --- |
-| `FINGER_THRESHOLD` | 30000 | Ngưỡng IR để xem như có ngón tay. |
-| `SAMPLE_WINDOW` | 2000 ms | Thời gian lấy mẫu PPG cho một lần đo. |
-| `SAMPLE_RATE` | 100 Hz | Tần số lấy mẫu logic trong firmware. |
-| `BUFFER_SIZE` | 200 mẫu | Số mẫu Red/IR dùng cho feature extraction. |
-| `STABILIZE_WINDOW_MS` | 5000 ms | Thời gian chờ tín hiệu ổn định trước khi lấy mẫu. |
+| Parameter | Current value | Meaning |
+| --- | ---: | --- |
+| `FINGER_THRESHOLD` | 30000 | IR threshold used for finger detection. |
+| `SAMPLE_WINDOW` | 2000 ms | PPG sampling duration for one measurement. |
+| `SAMPLE_RATE` | 100 Hz | Logical sampling rate used by firmware. |
+| `BUFFER_SIZE` | 200 samples | Number of Red/IR samples used for feature extraction. |
+| `STABILIZE_WINDOW_MS` | 5000 ms | Stabilization time before sampling. |
 
-## Kiến trúc OTA trong firmware
+## OTA Architecture
 
-OTA được chia thành bốn module nhỏ.
+The OTA path is split into four modules.
 
-| Module | Trách nhiệm |
+| Module | Responsibility |
 | --- | --- |
-| `crc_until` | Cung cấp CRC16 và CRC32. Không phụ thuộc ESP-IDF. |
-| `uart_proto` | Cấu hình UART, nhận frame, kiểm frame, gửi ACK/NACK. Không biết flash. |
-| `ota_controller` | Quản lý state machine START/DATA/END/ABORT, sequence, CRC32 image. |
-| `ota_writer` | Gọi ESP-IDF OTA API để ghi firmware vào partition không hoạt động. |
+| `crc_until` | Provides CRC16 and CRC32 algorithms. |
+| `uart_proto` | Configures UART, receives frames, validates CRC16, and sends ACK/NACK responses. |
+| `ota_controller` | Owns START/DATA/END/ABORT state transitions, sequence checks, and image CRC32 verification. |
+| `ota_writer` | Uses ESP-IDF OTA APIs to write firmware to the inactive app partition. |
 
-Quan hệ gọi hàm trong một packet OTA hợp lệ:
+Typical call flow for a valid packet:
 
 ```text
 Python host
@@ -90,11 +89,30 @@ Python host
   -> crc_util_crc16_ccitt
   -> ota_controller_handle_packet
   -> ota_writer_begin/write/finish
-  -> uart_proto_send_ack hoặc uart_proto_send_nack
+  -> uart_proto_send_ack or uart_proto_send_nack
 ```
 
-`ota_controller` không ghi flash trực tiếp. Nó chỉ gọi `ota_writer`. `ota_writer` cũng không biết START/DATA/END là gì; nó chỉ quản lý một session ghi OTA tuần tự. Cách chia này đáp ứng ràng buộc không dùng global chia sẻ trực tiếp giữa các layer. Mỗi module có static context riêng và expose API rõ ràng qua header.
+`ota_controller` does not write flash directly. `ota_writer` does not understand the UART protocol. This keeps responsibilities narrow and satisfies the assignment constraint that layers must not share global state directly.
 
-## Ghi chú về rule return
+## Build Modes
 
-Trong các module OTA mới, code đi theo phong cách một biến `ret` và return ở cuối hàm. Cách này giúp đọc luồng lỗi rõ hơn khi project muốn tránh nhiều `return` giữa hàm. Một số file cũ như `max30102.c` và `glucose_monitor.c` vẫn có đoạn return sớm từ trước; khi refactor tiếp có thể đồng bộ style dần, nhưng phần OTA/NVS/CRC đã đi theo hướng nhất quán hơn.
+Default mode builds the full glucose monitor application:
+
+```bash
+idf.py build
+```
+
+OTA test mode builds the minimal application:
+
+```bash
+idf.py -B build_ota_test \
+  -DAPP_OTA_TEST_MODE=ON \
+  -DAPP_OTA_TEST_VERSION=ota-demo-v2 \
+  build
+```
+
+For day-to-day demonstration, the shell wrapper is shorter:
+
+```bash
+./tools/ota_test.sh /dev/ttyUSB1 ota-demo-v2
+```

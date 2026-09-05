@@ -1,39 +1,39 @@
 # Non-Invasive Glucose Monitoring
 
-Đây là project ESP-IDF cho hệ thống đo glucose không xâm lấn dùng ESP32, MAX30102, OLED SSD1306, TinyJAMBU, MQTT và UART OTA dual-bank.
+This repository contains an ESP-IDF firmware project for a non-invasive glucose monitoring prototype based on ESP32, MAX30102, SSD1306 OLED, TinyJAMBU, MQTT, and dual-bank UART OTA.
 
-Bộ tài liệu kỹ thuật chính nằm trong thư mục [doc](doc/README.md). Nên bắt đầu từ [doc/README.md](doc/README.md), sau đó đọc tiếp theo thứ tự số file.
+The main technical documentation is in [doc](doc/README.md). Start with [doc/README.md](doc/README.md), then read the numbered files in order.
 
-Lệnh build firmware chính:
+Build the main firmware:
 
 ```bash
 idf.py build
 ```
 
-Binary dùng để gửi OTA:
+The OTA firmware binary is generated at:
 
 ```text
 build/glucose_monitor_espidf.bin
 ```
 
-OTA UART hiện dùng UART2 với GPIO26 là RX và GPIO27 là TX. Lần đầu tiên cần flash firmware có OTA bằng cổng nạp thông thường, sau đó mới gửi các bản cập nhật tiếp theo bằng `tools/ota_uart_send.py`.
+The current OTA transport uses UART2. ESP32 GPIO26 is the OTA RX pin and GPIO27 is the OTA TX pin. The first firmware image that enables OTA must still be flashed through the normal programming port. After that, newer images can be transferred with the project UART OTA tools.
 
-Flash lần đầu firmware có OTA:
+Initial flash with monitor:
 
 ```bash
 ./tools/flash_initial.sh /dev/ttyUSB0
 ```
 
-Gửi firmware chính đã build sẵn qua OTA:
+Send the already built main firmware through UART OTA:
 
 ```bash
 ./tools/ota_full.sh /dev/ttyUSB1
 ```
 
-Build firmware test tối giản rồi gửi qua OTA:
+Build and send the minimal OTA test firmware:
 
 ```bash
 ./tools/ota_test.sh /dev/ttyUSB1 ota-demo-v2
 ```
 
-Firmware test chỉ in version, running partition và heartbeat qua log. Nó dùng để kiểm tra nhanh OTA đã boot sang image mới hay chưa.
+The OTA test firmware prints its version, running partition, and heartbeat logs. It is intended for quickly verifying that OTA has rebooted into the new image.

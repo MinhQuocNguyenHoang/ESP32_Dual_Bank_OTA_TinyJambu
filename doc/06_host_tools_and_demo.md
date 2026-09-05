@@ -1,125 +1,144 @@
-# Công cụ host và quy trình demo OTA
+# Host Tools and OTA Demonstration
 
-Phía PC dùng script `tools/ota_uart_send.py` để gửi firmware binary qua UART. Script đọc file `.bin`, tính CRC32 toàn bộ file, tạo packet `START_OTA`, chia firmware thành nhiều packet `DATA`, gửi packet `END_OTA`, và chờ ACK/NACK sau mỗi packet.
+The PC side uses `tools/ota_uart_send.py` to send a firmware binary over UART. The script reads the `.bin` file, calculates the full-image CRC32, sends START_OTA, splits the firmware into DATA packets, sends END_OTA, and waits for ACK/NACK after every packet.
 
-Script này dùng `pyserial`, vì vậy môi trường Python cần có package `serial`.
+The Python sender requires `pyserial`.
 
-## Build firmware
+## Build the Main Firmware
 
-Từ thư mục gốc project:
+From the project root:
 
 ```bash
 idf.py build
 ```
 
-Binary dùng cho OTA nằm ở:
+The OTA binary is generated at:
 
 ```text
 build/glucose_monitor_espidf.bin
 ```
 
-Nếu mới bật OTA lần đầu hoặc board đang chạy firmware cũ chưa có OTA task, cần flash bằng cổng nạp bình thường:
+If the board is still running an old image without the OTA task, flash the OTA-capable firmware through the normal programming port first:
 
 ```bash
 ./tools/flash_initial.sh /dev/ttyUSB0
 ```
 
-Sau khi firmware mới chạy, chờ log:
+After the firmware boots, wait for:
 
 ```text
 OTA task started on UART2 RX=26 TX=27
 ```
 
-Chỉ sau thời điểm này host mới nên gửi OTA.
+The host should start the OTA transfer only after this log appears.
 
-## Demo với hai UART
+## Recommended Two-UART Demo Setup
 
-Đây là cách demo rõ ràng nhất.
+The cleanest demo setup uses two serial links.
 
 ```text
 UART0 onboard:
-  dùng để flash lần đầu và xem log bằng idf.py monitor
+  initial flash and ESP-IDF monitor logs
 
 UART2 GPIO26/GPIO27:
-  dùng để nhận firmware OTA từ script Python
+  UART OTA firmware transfer from the Python host
 ```
 
-Terminal xem log:
+Monitor terminal:
 
 ```bash
 idf.py -p /dev/ttyUSB0 monitor
 ```
 
-Terminal gửi OTA:
+OTA transfer terminal:
 
 ```bash
 ./tools/ota_full.sh /dev/ttyUSB1
 ```
 
-Port `/dev/ttyUSB1` chỉ là ví dụ. Cần thay bằng port thật của USB-UART rời nối vào GPIO26/GPIO27.
+`/dev/ttyUSB1` is only an example. Use the actual port of the external USB-UART adapter connected to GPIO26/GPIO27.
 
-## Cách xác định đúng serial port
+## Finding the Correct Serial Port
 
-Trên Linux, có thể kiểm tra danh sách serial:
+On Linux:
 
 ```bash
 ls /dev/ttyUSB* /dev/ttyACM*
 ```
 
-Một cách chắc hơn là rút USB-UART rời ra, chạy lệnh trên, sau đó cắm lại và chạy lại. Port mới xuất hiện là port của USB-UART rời.
+A reliable method is to unplug the external USB-UART adapter, run the command, plug the adapter back in, and run the command again. The newly appearing device is the OTA adapter.
 
-Nếu `idf.py monitor` xem log được trên `/dev/ttyUSB0`, thông thường `/dev/ttyUSB0` là UART0 onboard của board ESP32. OTA hiện tại không nghe UART0, nên script Python phải chạy trên port của USB-UART nối GPIO26/GPIO27.
+If `idf.py monitor` shows ESP32 logs on `/dev/ttyUSB0`, that port is normally the board UART0. The OTA code currently listens on UART2, so the OTA sender should use the USB-UART adapter wired to GPIO26/GPIO27.
 
-## Tham số script Python
+## Low-Level Python Sender
 
-Script hỗ trợ các tham số chính:
+`tools/ota_uart_send.py` exposes the raw protocol sender.
 
-| Tham số | Ý nghĩa |
+| Argument | Meaning |
 | --- | --- |
-| `--port` | Serial port dùng để gửi OTA. |
-| `--file` | Đường dẫn file firmware `.bin`. |
-| `--baud` | Baud rate, mặc định 115200. |
-| `--chunk-size` | Số byte firmware trong mỗi DATA packet, tối đa 256. |
-| `--timeout` | Thời gian chờ ACK/NACK cho mỗi packet. |
-| `--retries` | Số lần retry mỗi packet khi timeout hoặc NACK. |
-| `--settle-delay` | Thời gian chờ sau khi mở serial port trước khi gửi. |
+| `--port` | Serial port used for OTA transfer. |
+| `--file` | Firmware `.bin` path. |
+| `--baud` | UART baud rate, default 115200. |
+| `--chunk-size` | Firmware payload bytes per DATA packet, maximum 256. |
+| `--timeout` | ACK/NACK timeout per packet. |
+| `--retries` | Retry count per packet. |
+| `--settle-delay` | Delay after opening the serial port before sending. |
 
-Lệnh thường dùng:
+Direct usage:
+
+```bash
+python3 tools/ota_uart_send.py \
+  --port /dev/ttyUSB1 \
+  --file build/glucose_monitor_espidf.bin \
+  --baud 115200
+```
+
+## Short Demo Scripts
+
+The repository also provides shell wrappers for the most common operations.
+
+| Script | Purpose |
+| --- | --- |
+| `tools/flash_initial.sh` | Flash the firmware through ESP-IDF and open monitor. |
+| `tools/build_ota_test.sh` | Build only the minimal OTA test firmware. |
+| `tools/ota_test.sh` | Build the minimal OTA test firmware and send it through UART OTA. |
+| `tools/ota_full.sh` | Send the already built main firmware through UART OTA. |
+
+Initial flash:
+
+```bash
+./tools/flash_initial.sh /dev/ttyUSB0
+```
+
+Send the main firmware from `build/glucose_monitor_espidf.bin`:
 
 ```bash
 ./tools/ota_full.sh /dev/ttyUSB1
 ```
 
-Project còn có các script wrapper trong thư mục `tools/`. Các script này gom những lệnh dài thành lệnh ngắn hơn để demo dễ lặp lại.
-
-| Script | Công dụng |
-| --- | --- |
-| `tools/flash_initial.sh` | Flash firmware bằng ESP-IDF qua cổng nạp và mở monitor. |
-| `tools/build_ota_test.sh` | Chỉ build firmware test OTA tối giản. |
-| `tools/ota_test.sh` | Build firmware test OTA rồi gửi qua UART OTA. |
-| `tools/ota_full.sh` | Gửi firmware chính đã build sẵn qua UART OTA. |
-
-Gửi file `.bin` mặc định trong thư mục build:
-
-```bash
-./tools/ota_full.sh /dev/ttyUSB1
-```
-
-Gửi một file `.bin` chỉ định:
+Send a specific binary:
 
 ```bash
 ./tools/ota_full.sh /dev/ttyUSB1 build/glucose_monitor_espidf.bin
 ```
 
-Build firmware test OTA tối giản rồi gửi:
+Build and send the minimal OTA test firmware:
 
 ```bash
 ./tools/ota_test.sh /dev/ttyUSB1 ota-demo-v2
 ```
 
-Khi dùng `ota_test.sh`, script build vào thư mục `build_ota_test` với CMake option `APP_OTA_TEST_MODE=ON`. Firmware test không chạy glucose monitor, chỉ in version và heartbeat để kiểm tra image mới đã boot hay chưa.
+Build the minimal OTA test firmware without sending it:
 
-Khi chạy, script in thông tin firmware:
+```bash
+./tools/build_ota_test.sh ota-demo-v2
+```
+
+`ota_test.sh` builds into `build_ota_test` with `APP_OTA_TEST_MODE=ON`. The test firmware skips the glucose monitor application and prints version and heartbeat logs.
+
+## Expected Host Output
+
+The Python sender prints firmware metadata before transfer:
 
 ```text
 Firmware : build/glucose_monitor_espidf.bin
@@ -128,11 +147,11 @@ CRC32    : 0x6650F41F
 Port     : /dev/ttyUSB1 @ 115200
 ```
 
-Sau đó script hiển thị progress bar theo số byte đã gửi.
+After that, it prints a progress bar based on the number of firmware bytes sent.
 
-## Log kỳ vọng trên ESP32
+## Expected ESP32 Logs
 
-Khi START thành công:
+Successful START:
 
 ```text
 START OTA: image_size=... expected_crc32=...
@@ -140,13 +159,13 @@ Running partition: ...
 Writing OTA image to: ...
 ```
 
-Trong lúc ghi:
+During writing:
 
 ```text
 WRITING: .../... bytes (...%)
 ```
 
-Khi kết thúc:
+After END:
 
 ```text
 VERIFY: calculating firmware CRC32
@@ -154,40 +173,25 @@ SUCCESS: OTA image verified and boot partition updated
 REBOOT: restarting after successful OTA
 ```
 
-Sau reboot vào image mới, nếu rollback đang bật, firmware cần confirm image:
+After reboot into the new image:
 
 ```text
 OTA image pending validation, boot attempt 1/3
 OTA image confirmed valid
 ```
 
-## Các lỗi thường gặp
+## Troubleshooting
 
-Timeout ở `seq=0` nghĩa là host gửi START nhưng không nhận ACK/NACK. Lỗi này xảy ra trước khi ghi flash. Cần kiểm tra firmware đã flash bản có OTA chưa, OTA task đã started chưa, port có đúng USB-UART rời không, dây TX/RX có nối chéo không, GND có chung không và USB-UART có đang dùng mức 3.3 V không.
+Timeout at `seq=0` means the START packet was sent but no ACK/NACK came back. Check that the board is running OTA-capable firmware, the OTA task has started, the correct serial port is used, TX/RX are crossed correctly, GND is shared, and the USB-UART adapter uses 3.3 V logic.
 
-Timeout sau một vài packet DATA thường liên quan đến đường truyền UART không ổn định, dây dài, baud rate quá cao so với chất lượng module, hoặc ESP32 bị reset giữa quá trình OTA. Có thể thử giảm chunk size, tăng timeout hoặc kiểm tra nguồn cấp.
+Timeout after several DATA packets usually points to an unstable UART link, long wires, a weak power supply, or a reset during transfer. Try a shorter cable, a lower baud rate, a larger timeout, or a smaller chunk size.
 
-NACK `CRC_ERROR` ở packet thường do frame bị sai dữ liệu trên đường truyền hoặc host/firmware không dùng cùng thuật toán CRC16. Với code hiện tại, cả hai dùng CRC16/CCITT-FALSE polynomial `0x1021`.
+NACK `CRC_ERROR` at packet level usually means UART data corruption or a mismatch between host and firmware CRC16 implementations.
 
-NACK `LENGTH_ERROR` thường do payload length sai, chunk size vượt 256 byte, START payload không đúng 8 byte hoặc END có payload khác 0.
+NACK `LENGTH_ERROR` usually means an invalid payload length, chunk size above 256 bytes, START payload not exactly 8 bytes, or END payload not empty.
 
-NACK `SEQ_ERROR` nghĩa là ESP32 đang chờ sequence khác. Có thể do host gửi lại từ đầu khi ESP32 vẫn còn session active, hoặc ESP32 reset giữa quá trình truyền.
+NACK `SEQ_ERROR` means the host and firmware no longer agree on the next sequence number.
 
-Lỗi `Image too large` trên log ESP32 nghĩa là file `.bin` lớn hơn partition OTA inactive. Cần tăng size partition hoặc giảm kích thước firmware.
+An `Image too large` log means the binary is larger than the inactive OTA partition. Increase the partition size or reduce firmware size.
 
-## Demo đề xuất khi báo cáo
-
-Quy trình demo nên đi theo thứ tự rõ ràng:
-
-```text
-1. Flash firmware có OTA qua cổng nạp bình thường.
-2. Mở monitor và chỉ ra log OTA task started.
-3. Chạy script Python gửi file bin qua UART2.
-4. Theo dõi progress trên Python và log START/WRITING/VERIFY/SUCCESS trên ESP32.
-5. Quan sát ESP32 reboot.
-6. Sau reboot, chỉ ra log image pending validation và image confirmed valid.
-```
-
-Nếu muốn chứng minh rollback, có thể tạo một firmware cố tình fail self-test hoặc không confirm valid. Khi boot counter vượt quá 3, firmware sẽ gọi rollback. Khi demo phần này cần cẩn thận để không tự khóa board vào vòng reset khó quan sát.
-
-Nếu chỉ cần chứng minh OTA hoạt động, nên dùng firmware test tối giản trước. Sau khi đã chắc UART OTA ổn, mới gửi firmware đầy đủ của glucose monitor. Cách này giảm ảnh hưởng từ WiFi, MQTT, sensor và OLED trong lúc demo OTA.
+For a basic OTA proof, use the minimal OTA test firmware first. Once the UART OTA path is proven stable, transfer the full glucose monitor firmware.
