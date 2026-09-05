@@ -5,7 +5,7 @@
 const float GB_INIT_VAL = 105.941667f;
 const float GB_LEARNING_RATE = 0.100000f;
 
-inline float predict_gb_tree_0(const float* x) {
+static inline float predict_gb_tree_0(const float* x) {
     if (x[3] <= -0.238028f) {
     if (x[1] <= 1.386281f) {
     if (x[2] <= -0.425420f) {
@@ -33,7 +33,7 @@ inline float predict_gb_tree_0(const float* x) {
     }
 }
 
-inline float predict_gb_tree_1(const float* x) {
+static inline float predict_gb_tree_1(const float* x) {
     if (x[3] <= -0.238028f) {
     if (x[1] <= 1.386281f) {
     if (x[2] <= -0.425420f) {
@@ -61,7 +61,7 @@ inline float predict_gb_tree_1(const float* x) {
     }
 }
 
-inline float predict_gb_tree_2(const float* x) {
+static inline float predict_gb_tree_2(const float* x) {
     if (x[4] <= 0.122091f) {
     if (x[3] <= 0.797331f) {
     if (x[0] <= 0.433585f) {
@@ -89,7 +89,7 @@ inline float predict_gb_tree_2(const float* x) {
     }
 }
 
-inline float predict_gb_tree_3(const float* x) {
+static inline float predict_gb_tree_3(const float* x) {
     if (x[3] <= -0.238028f) {
     if (x[2] <= -1.442673f) {
     return 12.872925f;
@@ -117,7 +117,7 @@ inline float predict_gb_tree_3(const float* x) {
     }
 }
 
-inline float predict_gb_tree_4(const float* x) {
+static inline float predict_gb_tree_4(const float* x) {
     if (x[0] <= 0.061474f) {
     if (x[4] <= 1.488630f) {
     if (x[2] <= -0.590583f) {
@@ -145,7 +145,7 @@ inline float predict_gb_tree_4(const float* x) {
     }
 }
 
-inline float predict_gb_tree_5(const float* x) {
+static inline float predict_gb_tree_5(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[4] <= -0.854546f) {
     if (x[3] <= 1.767393f) {
@@ -173,7 +173,7 @@ inline float predict_gb_tree_5(const float* x) {
     }
 }
 
-inline float predict_gb_tree_6(const float* x) {
+static inline float predict_gb_tree_6(const float* x) {
     if (x[4] <= 0.122091f) {
     if (x[4] <= -0.854546f) {
     if (x[3] <= 1.767393f) {
@@ -205,7 +205,7 @@ inline float predict_gb_tree_6(const float* x) {
     }
 }
 
-inline float predict_gb_tree_7(const float* x) {
+static inline float predict_gb_tree_7(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[0] <= 0.981957f) {
     if (x[4] <= -0.156040f) {
@@ -233,7 +233,7 @@ inline float predict_gb_tree_7(const float* x) {
     }
 }
 
-inline float predict_gb_tree_8(const float* x) {
+static inline float predict_gb_tree_8(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[0] <= 0.981957f) {
     if (x[3] <= 0.013940f) {
@@ -261,7 +261,7 @@ inline float predict_gb_tree_8(const float* x) {
     }
 }
 
-inline float predict_gb_tree_9(const float* x) {
+static inline float predict_gb_tree_9(const float* x) {
     if (x[3] <= -0.238028f) {
     if (x[4] <= 0.823386f) {
     if (x[2] <= -0.425420f) {
@@ -293,7 +293,7 @@ inline float predict_gb_tree_9(const float* x) {
     }
 }
 
-inline float predict_gb_tree_10(const float* x) {
+static inline float predict_gb_tree_10(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[3] <= -1.303720f) {
     return 6.157080f;
@@ -321,7 +321,7 @@ inline float predict_gb_tree_10(const float* x) {
     }
 }
 
-inline float predict_gb_tree_11(const float* x) {
+static inline float predict_gb_tree_11(const float* x) {
     if (x[4] <= 0.122091f) {
     if (x[2] <= 0.824563f) {
     if (x[4] <= -0.486136f) {
@@ -353,7 +353,7 @@ inline float predict_gb_tree_11(const float* x) {
     }
 }
 
-inline float predict_gb_tree_12(const float* x) {
+static inline float predict_gb_tree_12(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[0] <= -1.678304f) {
     return 4.987235f;
@@ -381,7 +381,7 @@ inline float predict_gb_tree_12(const float* x) {
     }
 }
 
-inline float predict_gb_tree_13(const float* x) {
+static inline float predict_gb_tree_13(const float* x) {
     if (x[1] <= 0.202841f) {
     if (x[3] <= 0.797331f) {
     if (x[4] <= -0.486136f) {
@@ -413,7 +413,7 @@ inline float predict_gb_tree_13(const float* x) {
     }
 }
 
-inline float predict_gb_tree_14(const float* x) {
+static inline float predict_gb_tree_14(const float* x) {
     if (x[2] <= 0.160158f) {
     if (x[0] <= -0.953668f) {
     if (x[2] <= -1.442673f) {
@@ -441,7 +441,7 @@ inline float predict_gb_tree_14(const float* x) {
     }
 }
 
-inline float predict_gb_tree_15(const float* x) {
+static inline float predict_gb_tree_15(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[1] <= -0.831769f) {
     if (x[0] <= 1.481369f) {
@@ -469,7 +469,7 @@ inline float predict_gb_tree_15(const float* x) {
     }
 }
 
-inline float predict_gb_tree_16(const float* x) {
+static inline float predict_gb_tree_16(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[1] <= 1.386281f) {
     if (x[4] <= 0.823386f) {
@@ -497,7 +497,7 @@ inline float predict_gb_tree_16(const float* x) {
     }
 }
 
-inline float predict_gb_tree_17(const float* x) {
+static inline float predict_gb_tree_17(const float* x) {
     if (x[4] <= 0.122091f) {
     if (x[2] <= 0.824563f) {
     if (x[0] <= 0.652281f) {
@@ -529,7 +529,7 @@ inline float predict_gb_tree_17(const float* x) {
     }
 }
 
-inline float predict_gb_tree_18(const float* x) {
+static inline float predict_gb_tree_18(const float* x) {
     if (x[2] <= 0.160158f) {
     if (x[4] <= 0.823386f) {
     if (x[2] <= -0.425420f) {
@@ -557,7 +557,7 @@ inline float predict_gb_tree_18(const float* x) {
     }
 }
 
-inline float predict_gb_tree_19(const float* x) {
+static inline float predict_gb_tree_19(const float* x) {
     if (x[3] <= -0.238028f) {
     if (x[1] <= 0.822167f) {
     if (x[2] <= -0.425420f) {
@@ -589,7 +589,7 @@ inline float predict_gb_tree_19(const float* x) {
     }
 }
 
-inline float predict_gb_tree_20(const float* x) {
+static inline float predict_gb_tree_20(const float* x) {
     if (x[3] <= 0.013940f) {
     if (x[0] <= -0.953668f) {
     if (x[1] <= 1.386281f) {
@@ -617,7 +617,7 @@ inline float predict_gb_tree_20(const float* x) {
     }
 }
 
-inline float predict_gb_tree_21(const float* x) {
+static inline float predict_gb_tree_21(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[1] <= 1.386281f) {
     if (x[2] <= -0.590583f) {
@@ -645,7 +645,7 @@ inline float predict_gb_tree_21(const float* x) {
     }
 }
 
-inline float predict_gb_tree_22(const float* x) {
+static inline float predict_gb_tree_22(const float* x) {
     if (x[3] <= 0.013940f) {
     if (x[3] <= -0.811539f) {
     if (x[0] <= -1.678304f) {
@@ -673,7 +673,7 @@ inline float predict_gb_tree_22(const float* x) {
     }
 }
 
-inline float predict_gb_tree_23(const float* x) {
+static inline float predict_gb_tree_23(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[4] <= 1.488630f) {
     if (x[2] <= -0.590583f) {
@@ -701,7 +701,7 @@ inline float predict_gb_tree_23(const float* x) {
     }
 }
 
-inline float predict_gb_tree_24(const float* x) {
+static inline float predict_gb_tree_24(const float* x) {
     if (x[4] <= 0.122091f) {
     if (x[0] <= 0.981957f) {
     if (x[0] <= 0.433585f) {
@@ -733,7 +733,7 @@ inline float predict_gb_tree_24(const float* x) {
     }
 }
 
-inline float predict_gb_tree_25(const float* x) {
+static inline float predict_gb_tree_25(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[1] <= 0.822167f) {
     if (x[0] <= -0.519540f) {
@@ -765,7 +765,7 @@ inline float predict_gb_tree_25(const float* x) {
     }
 }
 
-inline float predict_gb_tree_26(const float* x) {
+static inline float predict_gb_tree_26(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[2] <= 0.824563f) {
     if (x[0] <= 0.433585f) {
@@ -797,7 +797,7 @@ inline float predict_gb_tree_26(const float* x) {
     }
 }
 
-inline float predict_gb_tree_27(const float* x) {
+static inline float predict_gb_tree_27(const float* x) {
     if (x[3] <= -0.238028f) {
     if (x[0] <= -0.953668f) {
     if (x[1] <= 1.386281f) {
@@ -829,7 +829,7 @@ inline float predict_gb_tree_27(const float* x) {
     }
 }
 
-inline float predict_gb_tree_28(const float* x) {
+static inline float predict_gb_tree_28(const float* x) {
     if (x[4] <= -0.156040f) {
     if (x[0] <= 0.981957f) {
     if (x[4] <= -0.486136f) {
@@ -861,7 +861,7 @@ inline float predict_gb_tree_28(const float* x) {
     }
 }
 
-inline float predict_gb_tree_29(const float* x) {
+static inline float predict_gb_tree_29(const float* x) {
     if (x[2] <= 0.160158f) {
     if (x[0] <= -0.953668f) {
     if (x[4] <= 1.488630f) {
@@ -893,7 +893,7 @@ inline float predict_gb_tree_29(const float* x) {
     }
 }
 
-inline float predict_gb_tree_30(const float* x) {
+static inline float predict_gb_tree_30(const float* x) {
     if (x[4] <= 0.122091f) {
     if (x[4] <= -0.854546f) {
     if (x[3] <= 1.767393f) {
@@ -925,7 +925,7 @@ inline float predict_gb_tree_30(const float* x) {
     }
 }
 
-inline float predict_gb_tree_31(const float* x) {
+static inline float predict_gb_tree_31(const float* x) {
     if (x[4] <= -0.156040f) {
     if (x[0] <= 0.981957f) {
     if (x[4] <= -0.486136f) {
@@ -957,7 +957,7 @@ inline float predict_gb_tree_31(const float* x) {
     }
 }
 
-inline float predict_gb_tree_32(const float* x) {
+static inline float predict_gb_tree_32(const float* x) {
     if (x[4] <= -0.156040f) {
     if (x[2] <= 0.824563f) {
     if (x[4] <= -0.486136f) {
@@ -989,7 +989,7 @@ inline float predict_gb_tree_32(const float* x) {
     }
 }
 
-inline float predict_gb_tree_33(const float* x) {
+static inline float predict_gb_tree_33(const float* x) {
     if (x[4] <= -0.156040f) {
     if (x[0] <= 0.981957f) {
     if (x[0] <= 0.652281f) {
@@ -1021,7 +1021,7 @@ inline float predict_gb_tree_33(const float* x) {
     }
 }
 
-inline float predict_gb_tree_34(const float* x) {
+static inline float predict_gb_tree_34(const float* x) {
     if (x[4] <= 0.122091f) {
     if (x[4] <= -0.854546f) {
     if (x[4] <= -1.657338f) {
@@ -1053,7 +1053,7 @@ inline float predict_gb_tree_34(const float* x) {
     }
 }
 
-inline float predict_gb_tree_35(const float* x) {
+static inline float predict_gb_tree_35(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[2] <= -0.849588f) {
     if (x[2] <= -1.442673f) {
@@ -1085,7 +1085,7 @@ inline float predict_gb_tree_35(const float* x) {
     }
 }
 
-inline float predict_gb_tree_36(const float* x) {
+static inline float predict_gb_tree_36(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[0] <= 0.652281f) {
     if (x[1] <= -0.058812f) {
@@ -1117,7 +1117,7 @@ inline float predict_gb_tree_36(const float* x) {
     }
 }
 
-inline float predict_gb_tree_37(const float* x) {
+static inline float predict_gb_tree_37(const float* x) {
     if (x[0] <= 0.061474f) {
     if (x[1] <= 0.822167f) {
     if (x[2] <= -0.425420f) {
@@ -1149,7 +1149,7 @@ inline float predict_gb_tree_37(const float* x) {
     }
 }
 
-inline float predict_gb_tree_38(const float* x) {
+static inline float predict_gb_tree_38(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[2] <= -0.849588f) {
     if (x[4] <= 1.488630f) {
@@ -1181,7 +1181,7 @@ inline float predict_gb_tree_38(const float* x) {
     }
 }
 
-inline float predict_gb_tree_39(const float* x) {
+static inline float predict_gb_tree_39(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[0] <= 0.652281f) {
     if (x[4] <= -0.156040f) {
@@ -1213,7 +1213,7 @@ inline float predict_gb_tree_39(const float* x) {
     }
 }
 
-inline float predict_gb_tree_40(const float* x) {
+static inline float predict_gb_tree_40(const float* x) {
     if (x[3] <= -0.238028f) {
     if (x[4] <= 0.823386f) {
     if (x[2] <= -0.425420f) {
@@ -1245,7 +1245,7 @@ inline float predict_gb_tree_40(const float* x) {
     }
 }
 
-inline float predict_gb_tree_41(const float* x) {
+static inline float predict_gb_tree_41(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[3] <= 0.797331f) {
     if (x[0] <= 0.433585f) {
@@ -1277,7 +1277,7 @@ inline float predict_gb_tree_41(const float* x) {
     }
 }
 
-inline float predict_gb_tree_42(const float* x) {
+static inline float predict_gb_tree_42(const float* x) {
     if (x[3] <= -0.238028f) {
     if (x[2] <= -0.849588f) {
     if (x[4] <= 1.488630f) {
@@ -1309,7 +1309,7 @@ inline float predict_gb_tree_42(const float* x) {
     }
 }
 
-inline float predict_gb_tree_43(const float* x) {
+static inline float predict_gb_tree_43(const float* x) {
     if (x[2] <= 0.160158f) {
     if (x[2] <= -0.590583f) {
     if (x[0] <= -1.678304f) {
@@ -1341,7 +1341,7 @@ inline float predict_gb_tree_43(const float* x) {
     }
 }
 
-inline float predict_gb_tree_44(const float* x) {
+static inline float predict_gb_tree_44(const float* x) {
     if (x[3] <= 0.013940f) {
     if (x[2] <= -0.590583f) {
     if (x[0] <= -1.678304f) {
@@ -1373,7 +1373,7 @@ inline float predict_gb_tree_44(const float* x) {
     }
 }
 
-inline float predict_gb_tree_45(const float* x) {
+static inline float predict_gb_tree_45(const float* x) {
     if (x[3] <= 0.013940f) {
     if (x[2] <= -0.590583f) {
     if (x[2] <= -1.442673f) {
@@ -1405,7 +1405,7 @@ inline float predict_gb_tree_45(const float* x) {
     }
 }
 
-inline float predict_gb_tree_46(const float* x) {
+static inline float predict_gb_tree_46(const float* x) {
     if (x[2] <= -0.110109f) {
     if (x[4] <= 0.823386f) {
     if (x[2] <= -0.425420f) {
@@ -1437,7 +1437,7 @@ inline float predict_gb_tree_46(const float* x) {
     }
 }
 
-inline float predict_gb_tree_47(const float* x) {
+static inline float predict_gb_tree_47(const float* x) {
     if (x[1] <= -0.058812f) {
     if (x[3] <= 0.797331f) {
     if (x[0] <= 0.652281f) {
@@ -1469,7 +1469,7 @@ inline float predict_gb_tree_47(const float* x) {
     }
 }
 
-inline float predict_gb_tree_48(const float* x) {
+static inline float predict_gb_tree_48(const float* x) {
     if (x[0] <= 0.061474f) {
     if (x[0] <= -0.953668f) {
     if (x[3] <= -1.303720f) {
@@ -1501,7 +1501,7 @@ inline float predict_gb_tree_48(const float* x) {
     }
 }
 
-inline float predict_gb_tree_49(const float* x) {
+static inline float predict_gb_tree_49(const float* x) {
     if (x[2] <= 0.160158f) {
     if (x[2] <= -0.849588f) {
     if (x[1] <= 1.386281f) {
@@ -1533,7 +1533,7 @@ inline float predict_gb_tree_49(const float* x) {
     }
 }
 
-inline float predict_gb_tree_50(const float* x) {
+static inline float predict_gb_tree_50(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[0] <= 0.652281f) {
     if (x[3] <= 0.013940f) {
@@ -1565,7 +1565,7 @@ inline float predict_gb_tree_50(const float* x) {
     }
 }
 
-inline float predict_gb_tree_51(const float* x) {
+static inline float predict_gb_tree_51(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[4] <= -0.486136f) {
     if (x[4] <= -1.657338f) {
@@ -1597,7 +1597,7 @@ inline float predict_gb_tree_51(const float* x) {
     }
 }
 
-inline float predict_gb_tree_52(const float* x) {
+static inline float predict_gb_tree_52(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[4] <= -0.486136f) {
     if (x[1] <= -1.712747f) {
@@ -1629,7 +1629,7 @@ inline float predict_gb_tree_52(const float* x) {
     }
 }
 
-inline float predict_gb_tree_53(const float* x) {
+static inline float predict_gb_tree_53(const float* x) {
     if (x[4] <= 0.122091f) {
     if (x[1] <= -0.831769f) {
     if (x[1] <= -1.712747f) {
@@ -1661,7 +1661,7 @@ inline float predict_gb_tree_53(const float* x) {
     }
 }
 
-inline float predict_gb_tree_54(const float* x) {
+static inline float predict_gb_tree_54(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[4] <= -0.854546f) {
     if (x[3] <= 1.767393f) {
@@ -1693,7 +1693,7 @@ inline float predict_gb_tree_54(const float* x) {
     }
 }
 
-inline float predict_gb_tree_55(const float* x) {
+static inline float predict_gb_tree_55(const float* x) {
     if (x[4] <= 0.122091f) {
     if (x[3] <= 0.797331f) {
     if (x[0] <= 0.433585f) {
@@ -1725,7 +1725,7 @@ inline float predict_gb_tree_55(const float* x) {
     }
 }
 
-inline float predict_gb_tree_56(const float* x) {
+static inline float predict_gb_tree_56(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[4] <= -0.486136f) {
     if (x[1] <= -1.712747f) {
@@ -1757,7 +1757,7 @@ inline float predict_gb_tree_56(const float* x) {
     }
 }
 
-inline float predict_gb_tree_57(const float* x) {
+static inline float predict_gb_tree_57(const float* x) {
     if (x[2] <= -0.110109f) {
     if (x[4] <= 0.823386f) {
     if (x[2] <= -0.425420f) {
@@ -1789,7 +1789,7 @@ inline float predict_gb_tree_57(const float* x) {
     }
 }
 
-inline float predict_gb_tree_58(const float* x) {
+static inline float predict_gb_tree_58(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[0] <= 0.652281f) {
     if (x[3] <= 0.013940f) {
@@ -1821,7 +1821,7 @@ inline float predict_gb_tree_58(const float* x) {
     }
 }
 
-inline float predict_gb_tree_59(const float* x) {
+static inline float predict_gb_tree_59(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[2] <= -0.849588f) {
     if (x[3] <= -1.303720f) {
@@ -1853,7 +1853,7 @@ inline float predict_gb_tree_59(const float* x) {
     }
 }
 
-inline float predict_gb_tree_60(const float* x) {
+static inline float predict_gb_tree_60(const float* x) {
     if (x[0] <= 0.061474f) {
     if (x[0] <= -0.953668f) {
     if (x[1] <= 1.386281f) {
@@ -1885,7 +1885,7 @@ inline float predict_gb_tree_60(const float* x) {
     }
 }
 
-inline float predict_gb_tree_61(const float* x) {
+static inline float predict_gb_tree_61(const float* x) {
     if (x[2] <= 0.160158f) {
     if (x[2] <= -0.590583f) {
     if (x[1] <= 1.386281f) {
@@ -1917,7 +1917,7 @@ inline float predict_gb_tree_61(const float* x) {
     }
 }
 
-inline float predict_gb_tree_62(const float* x) {
+static inline float predict_gb_tree_62(const float* x) {
     if (x[1] <= -0.058812f) {
     if (x[1] <= -0.831769f) {
     if (x[4] <= -1.657338f) {
@@ -1949,7 +1949,7 @@ inline float predict_gb_tree_62(const float* x) {
     }
 }
 
-inline float predict_gb_tree_63(const float* x) {
+static inline float predict_gb_tree_63(const float* x) {
     if (x[3] <= 0.013940f) {
     if (x[2] <= -0.590583f) {
     if (x[2] <= -1.442673f) {
@@ -1981,7 +1981,7 @@ inline float predict_gb_tree_63(const float* x) {
     }
 }
 
-inline float predict_gb_tree_64(const float* x) {
+static inline float predict_gb_tree_64(const float* x) {
     if (x[1] <= 0.202841f) {
     if (x[4] <= -0.854546f) {
     if (x[0] <= 1.481369f) {
@@ -2013,7 +2013,7 @@ inline float predict_gb_tree_64(const float* x) {
     }
 }
 
-inline float predict_gb_tree_65(const float* x) {
+static inline float predict_gb_tree_65(const float* x) {
     if (x[1] <= -0.058812f) {
     if (x[1] <= -0.831769f) {
     if (x[1] <= -1.712747f) {
@@ -2045,7 +2045,7 @@ inline float predict_gb_tree_65(const float* x) {
     }
 }
 
-inline float predict_gb_tree_66(const float* x) {
+static inline float predict_gb_tree_66(const float* x) {
     if (x[0] <= 0.061474f) {
     if (x[0] <= -0.953668f) {
     if (x[4] <= 1.488630f) {
@@ -2077,7 +2077,7 @@ inline float predict_gb_tree_66(const float* x) {
     }
 }
 
-inline float predict_gb_tree_67(const float* x) {
+static inline float predict_gb_tree_67(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[4] <= 0.823386f) {
     if (x[2] <= -0.590583f) {
@@ -2109,7 +2109,7 @@ inline float predict_gb_tree_67(const float* x) {
     }
 }
 
-inline float predict_gb_tree_68(const float* x) {
+static inline float predict_gb_tree_68(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[3] <= -0.811539f) {
     if (x[3] <= -1.303720f) {
@@ -2141,7 +2141,7 @@ inline float predict_gb_tree_68(const float* x) {
     }
 }
 
-inline float predict_gb_tree_69(const float* x) {
+static inline float predict_gb_tree_69(const float* x) {
     if (x[3] <= -0.238028f) {
     if (x[2] <= -0.849588f) {
     if (x[2] <= -1.442673f) {
@@ -2173,7 +2173,7 @@ inline float predict_gb_tree_69(const float* x) {
     }
 }
 
-inline float predict_gb_tree_70(const float* x) {
+static inline float predict_gb_tree_70(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[1] <= 0.822167f) {
     if (x[1] <= 0.363674f) {
@@ -2205,7 +2205,7 @@ inline float predict_gb_tree_70(const float* x) {
     }
 }
 
-inline float predict_gb_tree_71(const float* x) {
+static inline float predict_gb_tree_71(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[0] <= 0.652281f) {
     if (x[3] <= 0.013940f) {
@@ -2237,7 +2237,7 @@ inline float predict_gb_tree_71(const float* x) {
     }
 }
 
-inline float predict_gb_tree_72(const float* x) {
+static inline float predict_gb_tree_72(const float* x) {
     if (x[4] <= 0.122091f) {
     if (x[4] <= -0.854546f) {
     if (x[4] <= -1.657338f) {
@@ -2269,7 +2269,7 @@ inline float predict_gb_tree_72(const float* x) {
     }
 }
 
-inline float predict_gb_tree_73(const float* x) {
+static inline float predict_gb_tree_73(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[3] <= -0.811539f) {
     if (x[4] <= 1.488630f) {
@@ -2301,7 +2301,7 @@ inline float predict_gb_tree_73(const float* x) {
     }
 }
 
-inline float predict_gb_tree_74(const float* x) {
+static inline float predict_gb_tree_74(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[0] <= -0.953668f) {
     if (x[3] <= -1.303720f) {
@@ -2333,7 +2333,7 @@ inline float predict_gb_tree_74(const float* x) {
     }
 }
 
-inline float predict_gb_tree_75(const float* x) {
+static inline float predict_gb_tree_75(const float* x) {
     if (x[3] <= -0.238028f) {
     if (x[2] <= -0.590583f) {
     if (x[0] <= -1.678304f) {
@@ -2365,7 +2365,7 @@ inline float predict_gb_tree_75(const float* x) {
     }
 }
 
-inline float predict_gb_tree_76(const float* x) {
+static inline float predict_gb_tree_76(const float* x) {
     if (x[1] <= 0.202841f) {
     if (x[3] <= 0.797331f) {
     if (x[0] <= 0.652281f) {
@@ -2397,7 +2397,7 @@ inline float predict_gb_tree_76(const float* x) {
     }
 }
 
-inline float predict_gb_tree_77(const float* x) {
+static inline float predict_gb_tree_77(const float* x) {
     if (x[4] <= -0.156040f) {
     if (x[4] <= -0.854546f) {
     if (x[3] <= 1.767393f) {
@@ -2429,7 +2429,7 @@ inline float predict_gb_tree_77(const float* x) {
     }
 }
 
-inline float predict_gb_tree_78(const float* x) {
+static inline float predict_gb_tree_78(const float* x) {
     if (x[3] <= 0.013940f) {
     if (x[2] <= -0.590583f) {
     if (x[0] <= -1.678304f) {
@@ -2461,7 +2461,7 @@ inline float predict_gb_tree_78(const float* x) {
     }
 }
 
-inline float predict_gb_tree_79(const float* x) {
+static inline float predict_gb_tree_79(const float* x) {
     if (x[3] <= 0.013940f) {
     if (x[2] <= -0.590583f) {
     if (x[0] <= -1.678304f) {
@@ -2493,7 +2493,7 @@ inline float predict_gb_tree_79(const float* x) {
     }
 }
 
-inline float predict_gb_tree_80(const float* x) {
+static inline float predict_gb_tree_80(const float* x) {
     if (x[2] <= 0.160158f) {
     if (x[2] <= -0.590583f) {
     if (x[1] <= 0.656533f) {
@@ -2525,7 +2525,7 @@ inline float predict_gb_tree_80(const float* x) {
     }
 }
 
-inline float predict_gb_tree_81(const float* x) {
+static inline float predict_gb_tree_81(const float* x) {
     if (x[2] <= -0.110109f) {
     if (x[0] <= -0.953668f) {
     if (x[2] <= -1.442673f) {
@@ -2557,7 +2557,7 @@ inline float predict_gb_tree_81(const float* x) {
     }
 }
 
-inline float predict_gb_tree_82(const float* x) {
+static inline float predict_gb_tree_82(const float* x) {
     if (x[2] <= 0.160158f) {
     if (x[2] <= -0.590583f) {
     if (x[3] <= -1.303720f) {
@@ -2589,7 +2589,7 @@ inline float predict_gb_tree_82(const float* x) {
     }
 }
 
-inline float predict_gb_tree_83(const float* x) {
+static inline float predict_gb_tree_83(const float* x) {
     if (x[0] <= 0.061474f) {
     if (x[4] <= 0.823386f) {
     if (x[2] <= -0.425420f) {
@@ -2621,7 +2621,7 @@ inline float predict_gb_tree_83(const float* x) {
     }
 }
 
-inline float predict_gb_tree_84(const float* x) {
+static inline float predict_gb_tree_84(const float* x) {
     if (x[2] <= 0.160158f) {
     if (x[2] <= -0.849588f) {
     if (x[1] <= 1.386281f) {
@@ -2653,7 +2653,7 @@ inline float predict_gb_tree_84(const float* x) {
     }
 }
 
-inline float predict_gb_tree_85(const float* x) {
+static inline float predict_gb_tree_85(const float* x) {
     if (x[2] <= -0.110109f) {
     if (x[1] <= 0.822167f) {
     if (x[2] <= -0.425420f) {
@@ -2685,7 +2685,7 @@ inline float predict_gb_tree_85(const float* x) {
     }
 }
 
-inline float predict_gb_tree_86(const float* x) {
+static inline float predict_gb_tree_86(const float* x) {
     if (x[1] <= 0.202841f) {
     if (x[4] <= -0.486136f) {
     if (x[0] <= 1.481369f) {
@@ -2717,7 +2717,7 @@ inline float predict_gb_tree_86(const float* x) {
     }
 }
 
-inline float predict_gb_tree_87(const float* x) {
+static inline float predict_gb_tree_87(const float* x) {
     if (x[0] <= -0.147430f) {
     if (x[3] <= -0.811539f) {
     if (x[1] <= 1.386281f) {
@@ -2749,7 +2749,7 @@ inline float predict_gb_tree_87(const float* x) {
     }
 }
 
-inline float predict_gb_tree_88(const float* x) {
+static inline float predict_gb_tree_88(const float* x) {
     if (x[3] <= -0.238028f) {
     if (x[2] <= -0.849588f) {
     if (x[3] <= -1.303720f) {
@@ -2781,7 +2781,7 @@ inline float predict_gb_tree_88(const float* x) {
     }
 }
 
-inline float predict_gb_tree_89(const float* x) {
+static inline float predict_gb_tree_89(const float* x) {
     if (x[3] <= 0.013940f) {
     if (x[2] <= -0.590583f) {
     if (x[0] <= -1.678304f) {
@@ -2813,7 +2813,7 @@ inline float predict_gb_tree_89(const float* x) {
     }
 }
 
-inline float predict_gb_tree_90(const float* x) {
+static inline float predict_gb_tree_90(const float* x) {
     if (x[2] <= 0.160158f) {
     if (x[2] <= -0.590583f) {
     if (x[1] <= 0.656533f) {
@@ -2845,7 +2845,7 @@ inline float predict_gb_tree_90(const float* x) {
     }
 }
 
-inline float predict_gb_tree_91(const float* x) {
+static inline float predict_gb_tree_91(const float* x) {
     if (x[0] <= 0.061474f) {
     if (x[2] <= -0.849588f) {
     if (x[4] <= 1.488630f) {
@@ -2877,7 +2877,7 @@ inline float predict_gb_tree_91(const float* x) {
     }
 }
 
-inline float predict_gb_tree_92(const float* x) {
+static inline float predict_gb_tree_92(const float* x) {
     if (x[4] <= 0.306609f) {
     if (x[0] <= 0.652281f) {
     if (x[0] <= 0.433585f) {
@@ -2909,7 +2909,7 @@ inline float predict_gb_tree_92(const float* x) {
     }
 }
 
-inline float predict_gb_tree_93(const float* x) {
+static inline float predict_gb_tree_93(const float* x) {
     if (x[2] <= 0.160158f) {
     if (x[2] <= -0.590583f) {
     if (x[3] <= -1.303720f) {
@@ -2941,7 +2941,7 @@ inline float predict_gb_tree_93(const float* x) {
     }
 }
 
-inline float predict_gb_tree_94(const float* x) {
+static inline float predict_gb_tree_94(const float* x) {
     if (x[2] <= -0.110109f) {
     if (x[0] <= -0.953668f) {
     if (x[1] <= 1.386281f) {
@@ -2973,7 +2973,7 @@ inline float predict_gb_tree_94(const float* x) {
     }
 }
 
-inline float predict_gb_tree_95(const float* x) {
+static inline float predict_gb_tree_95(const float* x) {
     if (x[4] <= -0.156040f) {
     if (x[3] <= 0.797331f) {
     if (x[0] <= 0.652281f) {
@@ -3005,7 +3005,7 @@ inline float predict_gb_tree_95(const float* x) {
     }
 }
 
-inline float predict_gb_tree_96(const float* x) {
+static inline float predict_gb_tree_96(const float* x) {
     if (x[0] <= 0.061474f) {
     if (x[2] <= -0.849588f) {
     if (x[4] <= 1.488630f) {
@@ -3037,7 +3037,7 @@ inline float predict_gb_tree_96(const float* x) {
     }
 }
 
-inline float predict_gb_tree_97(const float* x) {
+static inline float predict_gb_tree_97(const float* x) {
     if (x[2] <= 0.160158f) {
     if (x[2] <= -0.590583f) {
     if (x[4] <= 1.488630f) {
@@ -3069,7 +3069,7 @@ inline float predict_gb_tree_97(const float* x) {
     }
 }
 
-inline float predict_gb_tree_98(const float* x) {
+static inline float predict_gb_tree_98(const float* x) {
     if (x[0] <= 0.433585f) {
     if (x[2] <= -0.590583f) {
     if (x[3] <= -1.303720f) {
@@ -3101,7 +3101,7 @@ inline float predict_gb_tree_98(const float* x) {
     }
 }
 
-inline float predict_gb_tree_99(const float* x) {
+static inline float predict_gb_tree_99(const float* x) {
     if (x[3] <= -0.238028f) {
     if (x[4] <= 0.823386f) {
     if (x[2] <= -0.425420f) {
@@ -3133,7 +3133,7 @@ inline float predict_gb_tree_99(const float* x) {
     }
 }
 
-inline float predict_gradient_boosting(const float* x) {
+static inline float predict_gradient_boosting(const float* x) {
     float pred = GB_INIT_VAL;
     pred += GB_LEARNING_RATE * predict_gb_tree_0(x);
     pred += GB_LEARNING_RATE * predict_gb_tree_1(x);

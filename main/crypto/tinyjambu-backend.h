@@ -32,38 +32,39 @@
  */
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/**
- * \brief TinyJAMBU-128 permutation state.
- */
-typedef struct
-{
-    uint32_t s[4];  /**< State as 32-bit words */
-    uint32_t k[4];  /**< Words of the key, pre-inverted */
+    /**
+     * \brief TinyJAMBU-128 permutation state.
+     */
+    typedef struct
+    {
+        uint32_t s[4]; /**< State as 32-bit words */
+        uint32_t k[4]; /**< Words of the key, pre-inverted */
 
-} tinyjambu_128_state_t;
+    } tinyjambu_128_state_t;
 
-/**
- * \brief TinyJAMBU-192 permutation state.
- */
-typedef struct
-{
-    uint32_t s[4];  /**< State as 32-bit words */
-    uint32_t k[6];  /**< Words of the key, pre-inverted */
+    /**
+     * \brief TinyJAMBU-192 permutation state.
+     */
+    typedef struct
+    {
+        uint32_t s[4]; /**< State as 32-bit words */
+        uint32_t k[6]; /**< Words of the key, pre-inverted */
 
-} tinyjambu_192_state_t;
+    } tinyjambu_192_state_t;
 
-/**
- * \brief TinyJAMBU-256 permutation state.
- */
-typedef struct
-{
-    uint32_t s[4];  /**< State as 32-bit words */
-    uint32_t k[8];  /**< Words of the key, pre-inverted */
+    /**
+     * \brief TinyJAMBU-256 permutation state.
+     */
+    typedef struct
+    {
+        uint32_t s[4]; /**< State as 32-bit words */
+        uint32_t k[8]; /**< Words of the key, pre-inverted */
 
-} tinyjambu_256_state_t;
+    } tinyjambu_256_state_t;
 
 /**
  * \brief Loads an even key word for TinyJAMBU.
@@ -125,45 +126,46 @@ typedef struct
  */
 #define TINYJAMBU_ROUNDS(steps) ((steps) / 128)
 
-/**
- * \brief Perform the TinyJAMBU-128 permutation.
- *
- * \param state TinyJAMBU-128 state to be permuted, including the key.
- * \param rounds The number of rounds to perform.
- */
-void tinyjambu_permutation_128(tinyjambu_128_state_t *state, unsigned rounds);
+    /**
+     * \brief Perform the TinyJAMBU-128 permutation.
+     *
+     * \param state TinyJAMBU-128 state to be permuted, including the key.
+     * \param rounds The number of rounds to perform.
+     */
+    void tinyjambu_permutation_128(tinyjambu_128_state_t *state, unsigned rounds);
 
-/**
- * \brief Perform the TinyJAMBU-192 permutation.
- *
- * \param state TinyJAMBU-192 state to be permuted, including the key.
- * \param rounds The number of rounds to perform.
- */
-void tinyjambu_permutation_192(tinyjambu_192_state_t *state, unsigned rounds);
+    /**
+     * \brief Perform the TinyJAMBU-192 permutation.
+     *
+     * \param state TinyJAMBU-192 state to be permuted, including the key.
+     * \param rounds The number of rounds to perform.
+     */
+    void tinyjambu_permutation_192(tinyjambu_192_state_t *state, unsigned rounds);
 
-/**
- * \brief Perform the TinyJAMBU-256 permutation.
- *
- * \param state TinyJAMBU-256 state to be permuted.
- * \param key Points to the 8 key words.
- * \param rounds The number of rounds to perform.
- *
- * \note The words of the \a key must be the inverted version of the
- * actual key so that we can replace NAND with AND operations when
- * evaluating the permutation.
- */
-void tinyjambu_permutation_256(tinyjambu_256_state_t *state, unsigned rounds);
+    /**
+     * \brief Perform the TinyJAMBU-256 permutation.
+     *
+     * \param state TinyJAMBU-256 state to be permuted.
+     * \param key Points to the 8 key words.
+     * \param rounds The number of rounds to perform.
+     *
+     * \note The words of the \a key must be the inverted version of the
+     * actual key so that we can replace NAND with AND operations when
+     * evaluating the permutation.
+     */
+    void tinyjambu_permutation_256(tinyjambu_256_state_t *state, unsigned rounds);
 
 /* Note: The last line should contain ~(t2 & t3) according to the
  * specification but we can avoid the NOT by inverting the words
  * of the key ahead of time. */
 #define tinyjambu_steps_32(s0, s1, s2, s3, kword) \
-    do { \
-        t1 = (s1 >> 15) | (s2 << 17); \
-        t2 = (s2 >> 6)  | (s3 << 26); \
-        t3 = (s2 >> 21) | (s3 << 11); \
-        t4 = (s2 >> 27) | (s3 << 5); \
-        s0 ^= t1 ^ (t2 & t3) ^ t4 ^ kword; \
+    do                                            \
+    {                                             \
+        t1 = (s1 >> 15) | (s2 << 17);             \
+        t2 = (s2 >> 6) | (s3 << 26);              \
+        t3 = (s2 >> 21) | (s3 << 11);             \
+        t4 = (s2 >> 27) | (s3 << 5);              \
+        s0 ^= t1 ^ (t2 & t3) ^ t4 ^ kword;        \
     } while (0)
 
 #ifdef __cplusplus

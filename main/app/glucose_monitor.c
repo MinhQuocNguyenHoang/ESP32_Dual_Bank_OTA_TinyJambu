@@ -1,5 +1,5 @@
 /**
- * @file glucose_monitor.cpp
+ * @file glucose_monitor.c
  * @brief Native ESP-IDF Implementation of Glucose Monitor FSM, Feature Extraction, TinyJAMBU Encryption & ESP-MQTT.
  * @details Conforms to embedded MISRA-C standards with strict fixed-width integer types and Doxygen documentation.
  */
@@ -17,7 +17,6 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
-#include "nvs_flash.h"
 #include "mqtt_client.h"
 #include "driver/ledc.h"
 
@@ -104,7 +103,6 @@ static volatile bool s_web_ack_received = false;
  */
 static void buzzer_init(void)
 {
-    // 1. Variable Initialization
     ledc_timer_config_t timer_conf = {};
     ledc_channel_config_t ch_conf = {};
 
@@ -121,7 +119,6 @@ static void buzzer_init(void)
     ch_conf.duty = 0;
     ch_conf.hpoint = 0;
 
-    // 2. Core Execution Logic
     ledc_timer_config(&timer_conf);
     ledc_channel_config(&ch_conf);
 }
@@ -134,10 +131,8 @@ static void buzzer_init(void)
  */
 static void buzzer_tone(const uint32_t freq_hz, const uint32_t duration_ms)
 {
-    // 1. Variable Initialization
     const TickType_t tone_ticks = pdMS_TO_TICKS(duration_ms);
 
-    // 2. Core Execution Logic
     if (freq_hz > 0)
     {
         ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_0, freq_hz);
@@ -164,11 +159,9 @@ static void buzzer_tone(const uint32_t freq_hz, const uint32_t duration_ms)
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
-    // 1. Variable Initialization
     ip_event_got_ip_t *ip_event = NULL;
     (void)arg;
 
-    // 2. Core Execution Logic
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
     {
         ESP_LOGI(TAG, "WiFi station started, connecting to SSID '%s'...", WIFI_SSID);
@@ -201,7 +194,6 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
  */
 static void wifi_init_sta(void)
 {
-    // 1. Variable Initialization
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     esp_event_handler_instance_t instance_any_id = NULL;
     esp_event_handler_instance_t instance_got_ip = NULL;
@@ -213,7 +205,6 @@ static void wifi_init_sta(void)
     wifi_config.sta.pmf_cfg.capable = true;
     wifi_config.sta.pmf_cfg.required = false;
 
-    // 2. Core Execution Logic
     esp_netif_create_default_wifi_sta();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
@@ -243,7 +234,6 @@ static void wifi_init_sta(void)
  */
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
-    // 1. Variable Initialization
     esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t)event_data;
     char topic[64] = {0};
     size_t t_len = 0;
@@ -251,7 +241,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     (void)handler_args;
     (void)base;
 
-    // 2. Core Execution Logic
     switch ((esp_mqtt_event_id_t)event_id)
     {
     case MQTT_EVENT_CONNECTED:
@@ -296,7 +285,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
  */
 static void extract_features(float *features)
 {
-    // 1. Variable Initialization
     float ir_mean = 0.0f;
     float red_mean = 0.0f;
     float ir_var = 0.0f;
@@ -308,8 +296,6 @@ static void extract_features(float *features)
     float min_val = g_ir_buffer[0];
     uint32_t i = 0;
 
-    // 2. Core Execution Logic
-    // 2.1 Calculate Mean Intensities
     for (i = 0; i < BUFFER_SIZE; i++)
     {
         ir_mean += g_ir_buffer[i];
@@ -319,7 +305,6 @@ static void extract_features(float *features)
     red_mean /= (float)BUFFER_SIZE;
     features[0] = ir_mean / (red_mean + 0.000001f);
 
-    // 2.2 Calculate RMSSD Signal Variability
     for (i = 1; i < BUFFER_SIZE; i++)
     {
         diff = g_ir_buffer[i] - g_ir_buffer[i - 1];
@@ -327,7 +312,6 @@ static void extract_features(float *features)
     }
     features[1] = sqrtf(ir_var / (float)(BUFFER_SIZE - 1));
 
-    // 2.3 Calculate Waveform Slope
     for (i = 1; i < BUFFER_SIZE; i++)
     {
         if (g_ir_buffer[i] > max_val)
@@ -361,14 +345,12 @@ static void extract_features(float *features)
  */
 static void encrypt_glucose(const float glucose_value, encrypted_payload_t *payload)
 {
-    // 1. Variable Initialization
     char plaintext[32] = {0};
     size_t mlen = 0;
 
     payload->length = 0;
     memset(payload->ciphertext, 0, sizeof(payload->ciphertext));
 
-    // 2. Core Execution Logic
     snprintf(plaintext, sizeof(plaintext), "GLUCOSE:%.2f", glucose_value);
     mlen = strlen(plaintext);
 
@@ -388,7 +370,6 @@ static void encrypt_glucose(const float glucose_value, encrypted_payload_t *payl
  */
 static bool send_telemetry_mqtt(const encrypted_payload_t *encrypted, const float glucose_val)
 {
-    // 1. Variable Initialization
     bool status = false;
     char hex_str[128] = {0};
     char payload[256] = {0};
@@ -397,7 +378,6 @@ static bool send_telemetry_mqtt(const encrypted_payload_t *encrypted, const floa
     uint32_t start_time = 0;
     const TickType_t step_delay = pdMS_TO_TICKS(50);
 
-    // 2. Core Execution Logic
     if (!s_wifi_connected)
     {
         ESP_LOGW(TAG, "[Upload Check] WiFi not connected -> Upload Failed");
@@ -446,7 +426,6 @@ static bool send_telemetry_mqtt(const encrypted_payload_t *encrypted, const floa
         ESP_LOGW(TAG, "[MQTT Timeout] No ACK received from Web Gateway within 1.5s");
     }
 
-    // 3. Function Return
     return status;
 }
 
@@ -454,47 +433,26 @@ static bool send_telemetry_mqtt(const encrypted_payload_t *encrypted, const floa
 /*                          INITIALIZATION ENTRY POINT                       */
 /* ========================================================================= */
 
-/**
- * @brief Initializes the native ESP-IDF Glucose Monitor System.
- * @param None
- * @return None
- */
 void glucose_monitor_init(void)
 {
-    // 1. Variable Initialization
-    esp_err_t ret = ESP_OK;
     esp_mqtt_client_config_t mqtt_cfg = {};
     uint32_t timeout_count = 0;
     const TickType_t step_delay = pdMS_TO_TICKS(100);
 
-    // 2. Core Execution Logic
-    // 2.1 Initialize NVS Storage & Network Stack
-    ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
-    {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    // 2.2 Initialize Hardware Peripherals
     buzzer_init();
     max30102_init(I2C_NUM_0, GPIO_NUM_32, GPIO_NUM_33);
     ssd1306_init(I2C_NUM_0);
 
-    // 2.3 Start WiFi Station
     wifi_init_sta();
 
-    // 2.4 Configure and Start ESP-MQTT Client
     mqtt_cfg.broker.address.uri = MQTT_URI;
     g_mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(g_mqtt_client, (esp_mqtt_event_id_t)ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(g_mqtt_client);
 
-    // 2.5 Visual Step-by-Step Diagnostic Boot Screen
     // Step A: Hardware Initialized
     ssd1306_clear();
     ssd1306_set_cursor(0, 0);
@@ -570,14 +528,8 @@ void glucose_monitor_init(void)
 /*                          FSM STATE MACHINE PROCESS                        */
 /* ========================================================================= */
 
-/**
- * @brief Main periodic task process for Glucose Monitor state machine execution.
- * @param None
- * @return None
- */
 void glucose_monitor_process(void)
 {
-    // 1. Variable Initialization
     uint32_t current_ir = 0;
     int32_t progress = 0;
     float features[3] = {0.0f};
@@ -589,7 +541,6 @@ void glucose_monitor_process(void)
     int32_t stab_progress = 0;
     float remaining_sec = 0.0f;
 
-    // 2. Core Execution Logic
     max30102_get_ir(&current_ir);
 
     switch (g_state)
