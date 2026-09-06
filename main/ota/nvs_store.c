@@ -46,7 +46,7 @@ static esp_err_t nvs_store_read_u32(const char *key, uint32_t default_value, uin
             *value = default_value;
             ret = ESP_OK;
         }
-        else if (ret == ESP_OK)
+        if (ret == ESP_OK)
         {
             ret = nvs_get_u32(handle, key, value);
             if (ret == ESP_ERR_NVS_NOT_FOUND)
@@ -54,10 +54,6 @@ static esp_err_t nvs_store_read_u32(const char *key, uint32_t default_value, uin
                 *value = default_value;
                 ret = ESP_OK;
             }
-        }
-        else
-        {
-            /* Keep the original NVS error for the caller. */
         }
 
         if (handle != 0U)
