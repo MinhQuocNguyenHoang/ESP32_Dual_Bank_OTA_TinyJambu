@@ -1,7 +1,7 @@
 import paho.mqtt.client as mqtt
 import json
 # local_broker = "192.168.137.1" # IP của hotspot của máy host
-local_broker = "192.168.1.120" # IP khi gửi 1 sample mẫu lên thingboard
+local_broker = "192.168.1.144" # IP khi gửi 1 sample mẫu lên thingboard
 local_port = 1883
 local_topic = "node/sensor_phong_khach/telemetry"
 

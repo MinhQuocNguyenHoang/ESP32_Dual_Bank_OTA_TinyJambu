@@ -41,7 +41,7 @@ static const char *WIFI_SSID = "Bill";
 static const char *WIFI_PASS = "minhquoc2005";
 
 // MQTT Gateway & Telemetry Configuration
-static const char *MQTT_URI = "mqtt://192.168.1.120:1883";
+static const char *MQTT_URI = "mqtt://192.168.1.144:1883";
 static const char *MQTT_TOPIC_TELEMETRY = "medical/glucose_monitor/telemetry";
 static const char *MQTT_TOPIC_ACK = "medical/glucose_monitor/ack";
 static const char *MQTT_TOPIC_ACK_ALIAS = "node/sensor_phong_khach/ack";

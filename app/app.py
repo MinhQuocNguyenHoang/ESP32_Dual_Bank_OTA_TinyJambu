@@ -15,7 +15,7 @@ app.config['SECRET_KEY'] = 'antigravity_glucose_secret_key'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent' if 'gevent' in globals() else 'threading')
 
 # MQTT Broker Configuration
-MQTT_BROKER = "192.168.1.120"
+MQTT_BROKER = "192.168.1.144"
 MQTT_PORT = 1883
 MQTT_TOPIC = "medical/glucose_monitor/telemetry"
 MQTT_ACK_TOPIC = "medical/glucose_monitor/ack"
