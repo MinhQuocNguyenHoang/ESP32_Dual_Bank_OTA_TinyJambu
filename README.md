@@ -603,4 +603,3 @@ Each OTA partition is currently `0x1F0000` bytes. If the firmware exceeds this s
 5. Add PPG filtering, adaptive thresholding, and per-user calibration.
 6. Migrate I2C code to `driver/i2c_master.h`.
 7. Add automated tests for CRC utilities, packet parsing, OTA controller behavior, and MQTT payload handling.
-8. Add a `requirements.txt` file for Python dependencies.
