@@ -506,16 +506,16 @@ Detailed documentation is available in `doc/`.
 
 | File | Content |
 | --- | --- |
-| `doc/01_project_overview.md` | System overview, source tree, and module responsibilities. |
-| `doc/02_firmware_architecture.md` | Firmware architecture, boot flow, runtime tasks, and state machines. |
-| `doc/03_uart_ota_protocol.md` | UART OTA packet format, command set, ACK/NACK, and sequence numbers. |
-| `doc/04_crc_integrity.md` | CRC16 for packets and CRC32 for firmware image verification. |
-| `doc/05_ota_flash_and_rollback.md` | OTA flash writing, dual-bank partitioning, boot partition switching, and rollback. |
-| `doc/06_host_tools_and_demo.md` | Build, flash, demo scripts, expected logs, and OTA troubleshooting. |
-| `doc/07_glucose_pipeline.md` | MAX30102 acquisition, feature extraction, model inference, TinyJAMBU, and MQTT telemetry. |
-| `doc/08_module_api_reference.md` | Internal firmware API reference. |
-| `doc/09_requirement_traceability.md` | Mapping between project requirements and implementation. |
-| `doc/10_ota_test_firmware.md` | Minimal OTA test firmware and repeatable demo workflow. |
+| [`project_overview.md`](docs/01_project_overview.md) | System overview, source tree, and module responsibilities. |
+| [`firmware_architecture.md`](docs/02_firmware_architecture.md) | Firmware architecture, boot flow, runtime tasks, and state machines. |
+| [`uart_ota_protocol.md`](docs/03_uart_ota_protocol.md) | UART OTA packet format, command set, ACK/NACK, and sequence numbers. |
+| [`crc_integrity.md`](docs/04_crc_integrity.md) | CRC16 for packets and CRC32 for firmware image verification. |
+| [`ota_flash_and_rollback.md`](docs/05_ota_flash_and_rollback.md) | OTA flash writing, dual-bank partitioning, boot partition switching, and rollback. |
+| [`host_tools_and_demo.md`](docs/06_host_tools_and_demo.md) | Build, flash, demo scripts, expected logs, and OTA troubleshooting. |
+| [`glucose_pipeline.md`](docs/07_glucose_pipeline.md) | MAX30102 acquisition, feature extraction, model inference, TinyJAMBU, and MQTT telemetry. |
+| [`module_api_reference.md`](docs/08_module_api_reference.md) | Internal firmware API reference. |
+| [`requirement_traceability.md`](docs/09_requirement_traceability.md) | Mapping between project requirements and implementation. |
+| [`ota_test_firmware.md`](docs/10_ota_test_firmware.md) | Minimal OTA test firmware and repeatable demo workflow. |
 
 ## Troubleshooting
 
