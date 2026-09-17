@@ -496,7 +496,7 @@ main/model/gradient_boosting_model.h
 The repository includes two MP4 demo videos under `video_demo/`.
 
 | File | Description | 
-| --- | --- | --- |
+| --- | --- | 
 | [`video_demo/demo_glucose.mp4`](video_demo/demo_glucose.mp4) | End-to-end glucose measurement demonstration. | 
 | [`video_demo/demo_ota.mp4`](video_demo/demo_ota.mp4) | UART OTA firmware update demonstration. | 
 
