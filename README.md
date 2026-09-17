@@ -29,28 +29,30 @@ This is a research and demonstration prototype. It is not a medical device, and 
 ## System Architecture
 
 ```mermaid
-flowchart LR
-    Sensor[MAX30102 Red/IR Sensor]
+flowchart TB
+    Sensor[MAX30102<br/>Red/IR Sensor]
     Broker[(Mosquitto MQTT Broker)]
 
     subgraph ESP32["ESP32 Firmware"]
+        direction TB
         Sampling[PPG Sampling]
         Features[Feature Extraction]
-        Model[Embedded Gradient Boosting Inference]
-        Encrypt[TinyJAMBU-128 AEAD Encryption]
-        Feedback[OLED Display and Buzzer Feedback]
-        Publish[MQTT Telemetry Publish]
+        Model[Embedded Gradient<br/>Boosting Inference]
+        Encrypt[TinyJAMBU-128<br/>AEAD Encryption]
+        Feedback[OLED Display<br/>and Buzzer Feedback]
+        Publish[MQTT Telemetry<br/>Publish]
         AckWait[ACK Wait]
 
         Sampling --> Features --> Model --> Encrypt --> Feedback --> Publish --> AckWait
     end
 
     subgraph Dashboard["Python Flask Dashboard"]
+        direction TB
         Subscribe[MQTT Subscribe]
-        Decrypt[TinyJAMBU Decryption]
+        Decrypt[TinyJAMBU<br/>Decryption]
         Store[(SQLite History)]
-        SocketIO[SocketIO Web UI Update]
-        AckPublish[MQTT ACK Publish]
+        SocketIO[SocketIO<br/>Web UI Update]
+        AckPublish[MQTT ACK<br/>Publish]
 
         Subscribe --> Decrypt
         Decrypt --> Store
@@ -68,21 +70,22 @@ flowchart LR
 The OTA path is independent from the glucose measurement pipeline:
 
 ```mermaid
-flowchart LR
+flowchart TB
     Host[PC Host]
     Sender[tools/ota_uart_send.py]
-    UART[UART2 Packet Protocol]
+    UART[UART2 Packet<br/>Protocol]
 
     subgraph ESP32_OTA["ESP32 OTA Runtime"]
+        direction TB
         Proto[uart_proto]
         Controller[ota_controller]
         Writer[ota_writer]
-        Partition[(Inactive OTA Partition)]
-        Boot[Boot Partition Switch]
+        Partition[(Inactive OTA<br/>Partition)]
+        Boot[Boot Partition<br/>Switch]
         Reboot[ESP32 Reboot]
 
-        Proto -->|CRC16 and sequence validation| Controller
-        Controller -->|CRC32 image verification| Writer
+        Proto -->|CRC16 + sequence| Controller
+        Controller -->|CRC32 image check| Writer
         Writer --> Partition --> Boot --> Reboot
     end
 
